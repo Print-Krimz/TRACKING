@@ -34,6 +34,7 @@ class ApplicationResponse(BaseModel):
     status: ApplicationStatus
     match_score: Optional[int]
     is_shortlisted: bool = False
+    in_talent_pool: bool = False
     applied_at: datetime
     updated_at: datetime
 

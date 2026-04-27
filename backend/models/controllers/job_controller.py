@@ -27,6 +27,7 @@ from schemas.job import (
     JobCriteriaResponse,
     JobKeywordResponse,
 )
+from services.talent_pool_service import bulk_rescan_talent_pool
 
 
 # =============================================================================
@@ -126,6 +127,12 @@ def create_job(
     if request.criteria:
         session.commit()
         session.refresh(job)
+
+    if job.status == JobStatus.OPEN:
+        try:
+            bulk_rescan_talent_pool(session, target_job_id=job.id)
+        except Exception:
+            pass
 
     return _to_response(job)
 
@@ -271,6 +278,16 @@ def update_job(
             session.refresh(job)
         except Exception:
             # Don't fail the update if keyword extraction fails
+            pass
+
+    if job.status == JobStatus.OPEN and (
+        description_changed
+        or request.criteria is not None
+        or "status" in update_data
+    ):
+        try:
+            bulk_rescan_talent_pool(session, target_job_id=job.id)
+        except Exception:
             pass
 
     return _to_response(job)

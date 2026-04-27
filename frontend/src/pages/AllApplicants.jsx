@@ -7,16 +7,27 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   getApplications,
   getJobs,
+  saveToTalentPool,
   updateApplicationStatus,
   toggleShortlist,
 } from "../services/api";
 import AnonymousName from "../components/AnonymousName";
 import DocumentViewerModal from "../components/DocumentViewerModal";
-import { CheckCircle2, Star, Search, FileText, Archive, ExternalLink, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  Star,
+  Search,
+  FileText,
+  Archive,
+  ExternalLink,
+  Users,
+  FolderPlus,
+  DatabaseZap,
+} from "lucide-react";
 import "./AllApplicants.css";
 
 const STATUS_OPTIONS = [
@@ -39,6 +50,7 @@ const SORT_OPTIONS = [
 
 const AllApplicants = () => {
   const navigate = useNavigate();
+  const { jobId: routeJobId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [applications, setApplications] = useState([]);
@@ -53,7 +65,9 @@ const AllApplicants = () => {
 
   // Filters from URL params for shareable state
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
-  const [jobFilter, setJobFilter] = useState(searchParams.get("job") || "all");
+  const [jobFilter, setJobFilter] = useState(
+    searchParams.get("job") || routeJobId || "all",
+  );
   const [statusFilter, setStatusFilter] = useState(
     searchParams.get("status") || "all",
   );
@@ -70,6 +84,12 @@ const AllApplicants = () => {
   useEffect(() => {
     loadData();
   }, [currentPage]);
+
+  useEffect(() => {
+    if (routeJobId && !searchParams.get("job")) {
+      setJobFilter(routeJobId);
+    }
+  }, [routeJobId, searchParams]);
 
   // Sync filters to URL
   useEffect(() => {
@@ -163,9 +183,17 @@ const AllApplicants = () => {
 
   const handleStatusChange = async (appId, newStatus) => {
     try {
-      await updateApplicationStatus(appId, newStatus);
+      const updated = await updateApplicationStatus(appId, newStatus);
       setApplications((prev) =>
-        prev.map((a) => (a.id === appId ? { ...a, status: newStatus } : a)),
+        prev.map((a) =>
+          a.id === appId
+            ? {
+                ...a,
+                status: updated.status,
+                in_talent_pool: updated.in_talent_pool,
+              }
+            : a,
+        ),
       );
       setSuccess("Status updated");
       setTimeout(() => setSuccess(""), 2000);
@@ -184,6 +212,25 @@ const AllApplicants = () => {
       );
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to toggle shortlist");
+    }
+  };
+
+  const handleSaveToTalentPool = async (application) => {
+    try {
+      const response = await saveToTalentPool(application.id);
+      setApplications((prev) =>
+        prev.map((item) =>
+          item.id === application.id ? { ...item, in_talent_pool: true } : item,
+        ),
+      );
+      setSuccess(
+        response.created
+          ? "Candidate saved to talent pool"
+          : "Candidate is already in the talent pool",
+      );
+      setTimeout(() => setSuccess(""), 2500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to save candidate to talent pool");
     }
   };
 
@@ -261,6 +308,14 @@ const AllApplicants = () => {
             Showing {filteredApps.length} of {applications.length} applicant
             {applications.length !== 1 ? "s" : ""}
           </p>
+        </div>
+        <div className="header-actions">
+          <button
+            className="talent-pool-link-btn"
+            onClick={() => navigate("/talent-pool")}
+          >
+            <DatabaseZap size={16} className="inline-icon" /> Talent Pool
+          </button>
         </div>
       </div>
 
@@ -508,6 +563,20 @@ const AllApplicants = () => {
                   }
                 >
                   <Star size={18} fill={app.is_shortlisted ? "currentColor" : "none"} />
+                </button>
+                <button
+                  className={`action-btn ${app.in_talent_pool ? "is-active" : ""}`}
+                  onClick={() => handleSaveToTalentPool(app)}
+                  title={
+                    app.in_talent_pool
+                      ? "Already saved to talent pool"
+                      : app.status === "rejected"
+                        ? "Save candidate to talent pool"
+                        : "Set status to Rejected before saving to talent pool"
+                  }
+                  disabled={app.in_talent_pool || app.status !== "rejected"}
+                >
+                  <FolderPlus size={18} />
                 </button>
                 {app.resume_id && (
                   <button

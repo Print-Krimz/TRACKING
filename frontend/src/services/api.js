@@ -527,6 +527,63 @@ export const deleteApplication = async (applicationId) => {
   await api.delete(`/applications/${applicationId}`);
 };
 
+/**
+ * Save a rejected or unselected application into the dedicated talent pool.
+ *
+ * @param {number} applicationId - Source application ID
+ * @param {Object} options - Save options
+ * @param {string|null} options.notes - Optional recruiter note
+ * @param {boolean} options.auto_rescan - Whether to rescan immediately
+ * @returns {Promise<Object>} Save result
+ */
+export const saveToTalentPool = async (
+  applicationId,
+  { notes = null, auto_rescan = true } = {},
+) => {
+  const response = await api.post("/talent-pool/entries", {
+    application_id: applicationId,
+    notes,
+    auto_rescan,
+  });
+  return response.data;
+};
+
+/**
+ * Browse dedicated talent pool entries.
+ *
+ * @param {Object} params - Query params
+ * @returns {Promise<Object>} Talent pool list
+ */
+export const getTalentPoolEntries = async (params = {}) => {
+  const response = await api.get("/talent-pool/entries", { params });
+  return response.data;
+};
+
+/**
+ * Rescan one talent pool entry against open jobs.
+ *
+ * @param {number} entryId - Talent pool entry ID
+ * @param {Object} params - Optional target job filter
+ * @returns {Promise<Object>} Rescan result
+ */
+export const rescanTalentPoolEntry = async (entryId, params = {}) => {
+  const response = await api.post(`/talent-pool/entries/${entryId}/rescan`, null, {
+    params,
+  });
+  return response.data;
+};
+
+/**
+ * Bulk rescan active talent pool entries.
+ *
+ * @param {Object} params - Optional target job filter
+ * @returns {Promise<Object>} Bulk rescan result
+ */
+export const rescanTalentPool = async (params = {}) => {
+  const response = await api.post("/talent-pool/rescan", null, { params });
+  return response.data;
+};
+
 // =============================================================================
 // Analytics API Functions
 // =============================================================================

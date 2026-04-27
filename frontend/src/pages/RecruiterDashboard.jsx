@@ -16,7 +16,7 @@ import {
   getSkillDistribution,
   updateApplicationStatus,
 } from "../services/api";
-import { Users, FileText } from "lucide-react";
+import { Users, FileText, DatabaseZap } from "lucide-react";
 import ResumeDrawer from "../components/ResumeDrawer";
 import "./RecruiterDashboard.css";
 
@@ -181,6 +181,12 @@ const RecruiterDashboard = () => {
             onClick={() => navigate("/applicants")}
           >
             <Users size={16} className="inline-icon"/> View All Applicants
+          </button>
+          <button
+            className="view-applicants-btn"
+            onClick={() => navigate("/talent-pool")}
+          >
+            <DatabaseZap size={16} className="inline-icon"/> Talent Pool
           </button>
           <button
             className="create-job-btn"

@@ -43,6 +43,7 @@ import ManpowerDeployment from "./pages/ManpowerDeployment";
 import AdminControlPanel from "./pages/AdminControlPanel";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import UserSettings from "./pages/UserSettings";
+import TalentPool from "./pages/TalentPool";
 
 /**
  * DashboardRouter
@@ -173,6 +174,17 @@ function App() {
               allowedRoles={["Recruiter", "Admin", "Control Panel Admin"]}
             >
               <AllApplicants />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/talent-pool"
+          element={
+            <PrivateRoute
+              allowedRoles={["Recruiter", "Admin", "Control Panel Admin"]}
+            >
+              <TalentPool />
             </PrivateRoute>
           }
         />

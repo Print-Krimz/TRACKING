@@ -31,7 +31,7 @@ from database import create_db_and_tables, ensure_application_status_enum_values
 from routes import (
     auth_router, user_router, roles_router, resume_router, job_router, 
     application_router, analytics_router, matching_router, document_router,
-    client_router, deployment_router, admin_router
+    client_router, deployment_router, admin_router, talent_pool_router
 )
 from models.permission import Permission, RolePermissionLink
 from models.role import Role
@@ -292,6 +292,7 @@ app.include_router(document_router)       # /documents/* routes
 app.include_router(client_router)         # /clients/* routes
 app.include_router(deployment_router)     # /deployments/* routes
 app.include_router(admin_router)          # /admin/* routes
+app.include_router(talent_pool_router)    # /talent-pool/* routes
 
 
 @app.get("/", tags=["Root"])

@@ -164,6 +164,31 @@ const NAV_ITEMS = [
         ),
       },
       {
+        to: "/talent-pool",
+        label: "Talent Pool",
+        roles: ["Recruiter", "Admin", "Control Panel Admin"],
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 4C16.4183 4 20 5.79086 20 8V16C20 18.2091 16.4183 20 12 20C7.58172 20 4 18.2091 4 16V8C4 5.79086 7.58172 4 12 4Z"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+            <path
+              d="M4 8C4 10.2091 7.58172 12 12 12C16.4183 12 20 10.2091 20 8"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+            <path
+              d="M9 16H9.01M12 16H12.01M15 16H15.01"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        ),
+      },
+      {
         to: "/deployments",
         label: "Deployments",
         roles: ["Recruiter", "Admin", "Control Panel Admin"],

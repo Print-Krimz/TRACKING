@@ -28,10 +28,11 @@ from models.user import User
 from models.resume import Resume
 from models.job import JobRequisition, JobCriteria, JobKeyword, JobStatus
 from models.application import Application, ApplicationStatus
+from models.talent_pool import TalentPoolEntry, TalentPoolStatus
 
 # Export all models for easy importing
 __all__ = [
     "Permission", "RolePermissionLink", "Role", "User", "Resume",
     "JobRequisition", "JobCriteria", "JobKeyword", "JobStatus",
-    "Application", "ApplicationStatus"
+    "Application", "ApplicationStatus", "TalentPoolEntry", "TalentPoolStatus"
 ]

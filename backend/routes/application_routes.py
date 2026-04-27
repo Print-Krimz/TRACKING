@@ -21,6 +21,7 @@ from models.user import User
 from models.job import JobRequisition, JobStatus
 from models.application import Application, ApplicationStatus
 from models.resume import Resume
+from models.talent_pool import TalentPoolEntry
 from schemas.application import (
     ApplicationCreateRequest,
     ApplicationStatusUpdate,
@@ -29,6 +30,7 @@ from schemas.application import (
     CandidateApplicationResponse,
     CandidateApplicationList
 )
+from services.talent_pool_service import save_application_to_talent_pool
 
 
 router = APIRouter(
@@ -36,6 +38,40 @@ router = APIRouter(
     tags=["Applications"],
     responses={401: {"description": "Not authenticated"}}
 )
+
+
+def _get_talent_pool_application_ids(session: Session, application_ids: list[int]) -> set[int]:
+    if not application_ids:
+        return set()
+
+    pooled_ids = session.exec(
+        select(TalentPoolEntry.source_application_id).where(
+            TalentPoolEntry.source_application_id.in_(application_ids)
+        )
+    ).all()
+    return {application_id for application_id in pooled_ids if application_id is not None}
+
+
+def _build_application_response(
+    application: Application,
+    job: JobRequisition | None,
+    candidate: User | None,
+    in_talent_pool: bool = False,
+) -> ApplicationResponse:
+    return ApplicationResponse(
+        id=application.id,
+        job_id=application.job_id,
+        job_title=job.title if job else None,
+        candidate_id=application.candidate_id,
+        candidate_name=candidate.username if candidate else None,
+        resume_id=application.resume_id,
+        status=application.status,
+        match_score=application.match_score,
+        is_shortlisted=application.is_shortlisted,
+        in_talent_pool=in_talent_pool,
+        applied_at=application.applied_at,
+        updated_at=application.updated_at,
+    )
 
 
 @router.post(
@@ -99,19 +135,7 @@ def apply_to_job(
     session.commit()
     session.refresh(application)
     
-    return ApplicationResponse(
-        id=application.id,
-        job_id=application.job_id,
-        job_title=job.title,
-        candidate_id=application.candidate_id,
-        candidate_name=current_user.username,
-        resume_id=application.resume_id,
-        status=application.status,
-        match_score=application.match_score,
-        is_shortlisted=application.is_shortlisted,
-        applied_at=application.applied_at,
-        updated_at=application.updated_at
-    )
+    return _build_application_response(application, job, current_user)
 
 
 @router.get(
@@ -151,25 +175,23 @@ def list_applications(
     skip = (page - 1) * limit
     
     applications = session.exec(query.offset(skip).limit(limit)).all()
+    pooled_application_ids = _get_talent_pool_application_ids(
+        session, [app.id for app in applications if app.id is not None]
+    )
     
     result = []
     for app in applications:
         job = session.get(JobRequisition, app.job_id)
         candidate = session.get(User, app.candidate_id)
         
-        result.append(ApplicationResponse(
-            id=app.id,
-            job_id=app.job_id,
-            job_title=job.title if job else None,
-            candidate_id=app.candidate_id,
-            candidate_name=candidate.username if candidate else None,
-            resume_id=app.resume_id,
-            status=app.status,
-            match_score=app.match_score,
-            is_shortlisted=app.is_shortlisted,
-            applied_at=app.applied_at,
-            updated_at=app.updated_at
-        ))
+        result.append(
+            _build_application_response(
+                app,
+                job,
+                candidate,
+                in_talent_pool=app.id in pooled_application_ids,
+            )
+        )
     
     return ApplicationListResponse(
         applications=result, 
@@ -255,18 +277,17 @@ def get_application(
     job = session.get(JobRequisition, application.job_id)
     candidate = session.get(User, application.candidate_id)
     
-    return ApplicationResponse(
-        id=application.id,
-        job_id=application.job_id,
-        job_title=job.title if job else None,
-        candidate_id=application.candidate_id,
-        candidate_name=candidate.username if candidate else None,
-        resume_id=application.resume_id,
-        status=application.status,
-        match_score=application.match_score,
-        is_shortlisted=application.is_shortlisted,
-        applied_at=application.applied_at,
-        updated_at=application.updated_at
+    return _build_application_response(
+        application,
+        job,
+        candidate,
+        in_talent_pool=bool(
+            session.exec(
+                select(TalentPoolEntry).where(
+                    TalentPoolEntry.source_application_id == application.id
+                )
+            ).first()
+        ),
     )
 
 
@@ -296,25 +317,45 @@ def update_application_status(
     
     if request.notes:
         application.notes = request.notes
+
+    linked_pool_entries = session.exec(
+        select(TalentPoolEntry).where(
+            TalentPoolEntry.source_application_id == application.id
+        )
+    ).all()
+    for entry in linked_pool_entries:
+        entry.source_status = request.status
+        entry.updated_at = datetime.utcnow()
+        session.add(entry)
     
     session.commit()
     session.refresh(application)
+
+    if request.status == ApplicationStatus.REJECTED and not linked_pool_entries:
+        try:
+            _, created = save_application_to_talent_pool(
+                session,
+                application,
+                recruiter_id=current_user.id,
+                auto_rescan=False,
+            )
+            if created:
+                linked_pool_entries = session.exec(
+                    select(TalentPoolEntry).where(
+                        TalentPoolEntry.source_application_id == application.id
+                    )
+                ).all()
+        except ValueError:
+            pass
     
     job = session.get(JobRequisition, application.job_id)
     candidate = session.get(User, application.candidate_id)
     
-    return ApplicationResponse(
-        id=application.id,
-        job_id=application.job_id,
-        job_title=job.title if job else None,
-        candidate_id=application.candidate_id,
-        candidate_name=candidate.username if candidate else None,
-        resume_id=application.resume_id,
-        status=application.status,
-        match_score=application.match_score,
-        is_shortlisted=application.is_shortlisted,
-        applied_at=application.applied_at,
-        updated_at=application.updated_at
+    return _build_application_response(
+        application,
+        job,
+        candidate,
+        in_talent_pool=bool(linked_pool_entries),
     )
 
 
@@ -347,18 +388,17 @@ def toggle_shortlist(
     job = session.get(JobRequisition, application.job_id)
     candidate = session.get(User, application.candidate_id)
     
-    return ApplicationResponse(
-        id=application.id,
-        job_id=application.job_id,
-        job_title=job.title if job else None,
-        candidate_id=application.candidate_id,
-        candidate_name=candidate.username if candidate else None,
-        resume_id=application.resume_id,
-        status=application.status,
-        match_score=application.match_score,
-        is_shortlisted=application.is_shortlisted,
-        applied_at=application.applied_at,
-        updated_at=application.updated_at
+    return _build_application_response(
+        application,
+        job,
+        candidate,
+        in_talent_pool=bool(
+            session.exec(
+                select(TalentPoolEntry).where(
+                    TalentPoolEntry.source_application_id == application.id
+                )
+            ).first()
+        ),
     )
 
 

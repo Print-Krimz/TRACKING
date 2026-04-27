@@ -117,6 +117,9 @@ const Navbar = () => {
                 <Link to="/recruiter" className="nav-link">
                   Pipeline
                 </Link>
+                <Link to="/talent-pool" className="nav-link">
+                  Talent Pool
+                </Link>
                 <Link to="/resumes" className="nav-link">
                   All Resumes
                 </Link>
