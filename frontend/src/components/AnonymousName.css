@@ -1,0 +1,97 @@
+/* ═══════════════════════════════════════════
+   AnonymousName Component Styles
+   Click-to-reveal candidate identity
+   ═══════════════════════════════════════════ */
+
+.anon-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem 0.2rem 0.2rem;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.anon-name:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.anon-name:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* ── Avatar ────────────────────────────── */
+
+.anon-name__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+/* Hidden state — muted purple */
+.anon-name--hidden .anon-name__avatar {
+  background: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+}
+
+/* Revealed state — vibrant gradient */
+.anon-name--revealed .anon-name__avatar {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+/* ── Text + Icon ───────────────────────── */
+
+.anon-name__text {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.anon-name__label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+/* Hidden state — blurred look */
+.anon-name--hidden .anon-name__label {
+  color: #6366f1;
+  font-style: italic;
+}
+
+/* Revealed state — normal */
+.anon-name--revealed .anon-name__label {
+  color: #e2e8f0;
+  font-style: normal;
+}
+
+.anon-name__icon {
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.anon-name:hover .anon-name__icon {
+  opacity: 1;
+}
+
+.anon-name--hidden .anon-name__icon {
+  color: #6366f1;
+}
+
+.anon-name--revealed .anon-name__icon {
+  color: #94a3b8;
+}

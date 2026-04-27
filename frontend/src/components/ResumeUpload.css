@@ -1,0 +1,424 @@
+/**
+ * Resume Submit Page Styles
+ */
+
+.resume-submit-page {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.page-header p {
+  color: #94a3b8;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Mode Toggle */
+.mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 4px;
+  background: rgba(26, 26, 46, 0.6);
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mode-btn:hover {
+  color: #fff;
+}
+
+.mode-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+}
+
+/* File Upload Drop Zone */
+.drop-zone {
+  border: 2px dashed rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(15, 15, 26, 0.4);
+}
+
+.drop-zone:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.drop-zone.dragging {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  border-style: solid;
+}
+
+.drop-zone-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  color: #818cf8;
+}
+
+.drop-zone-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.drop-zone-text {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem;
+}
+
+.drop-zone-primary {
+  color: #818cf8;
+  font-weight: 500;
+}
+
+.drop-zone-hint {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* File Preview */
+.file-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 15, 26, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.file-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #818cf8;
+}
+
+.file-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.file-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.file-name {
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.file-size {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.remove-file-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(239, 68, 68, 0.1);
+  border: none;
+  border-radius: 8px;
+  color: #f87171;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.remove-file-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.remove-file-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Tips Card */
+.tips-card {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.tips-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #818cf8;
+  flex-shrink: 0;
+}
+
+.tips-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.tips-content h3 {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.tips-content ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+/* Error Banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  color: #f87171;
+  font-size: 0.9rem;
+}
+
+.error-banner svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Resume Form */
+.resume-form {
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 20px;
+  padding: 2rem;
+}
+
+.resume-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.resume-form label {
+  display: block;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.resume-form textarea {
+  width: 100%;
+  min-height: 400px;
+  background: rgba(15, 15, 26, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  color: #fff;
+  font-size: 0.95rem;
+  font-family: "Inter", sans-serif;
+  line-height: 1.6;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.resume-form textarea::placeholder {
+  color: #64748b;
+}
+
+.resume-form textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.resume-form textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Character Count */
+.char-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.char-count .valid {
+  color: #34d399;
+}
+
+.char-count .invalid {
+  color: #f87171;
+}
+
+.char-count .min-chars {
+  color: #64748b;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: rgba(100, 116, 139, 0.3);
+  color: #fff;
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  color: #fff;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .resume-submit-page {
+    padding: 1rem;
+  }
+
+  .tips-card {
+    flex-direction: column;
+  }
+
+  .resume-form {
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

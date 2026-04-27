@@ -1,0 +1,206 @@
+/**
+ * MEGS Design Tokens
+ *
+ * Centralized design system variables for the
+ * MAR Employment for Good Services HR Pipeline.
+ *
+ * Usage: var(--token-name)
+ */
+
+:root {
+  /* ===================================================
+     BRAND COLORS
+     =================================================== */
+  --brand-50:  #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #3b82f6;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+  --brand-800: #1e40af;
+  --brand-900: #1e3a8a;
+
+  /* ===================================================
+     SURFACE / BACKGROUNDS
+     =================================================== */
+  --surface-bg:       #0b1121;
+  --surface-card:     #111827;
+  --surface-raised:   #1e293b;
+  --surface-hover:    #1f2937;
+  --surface-border:   rgba(148, 163, 184, 0.08);
+  --surface-border-strong: rgba(148, 163, 184, 0.15);
+  --surface-overlay:  rgba(11, 17, 33, 0.80);
+
+  /* ===================================================
+     TEXT
+     =================================================== */
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+  --text-disabled:  #475569;
+  --text-inverse:   #0f172a;
+  --text-brand:     #60a5fa;
+
+  /* ===================================================
+     SEMANTIC STATUS COLORS
+     =================================================== */
+  --success-400: #34d399;
+  --success-500: #10b981;
+  --success-600: #059669;
+  --success-bg:  rgba(16, 185, 129, 0.10);
+  --success-border: rgba(16, 185, 129, 0.25);
+
+  --warning-400: #fbbf24;
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+  --warning-bg:  rgba(245, 158, 11, 0.10);
+  --warning-border: rgba(245, 158, 11, 0.25);
+
+  --error-400: #f87171;
+  --error-500: #ef4444;
+  --error-600: #dc2626;
+  --error-bg:  rgba(239, 68, 68, 0.10);
+  --error-border: rgba(239, 68, 68, 0.25);
+
+  --info-400: #22d3ee;
+  --info-500: #06b6d4;
+  --info-600: #0891b2;
+  --info-bg:  rgba(6, 182, 212, 0.10);
+  --info-border: rgba(6, 182, 212, 0.25);
+
+  /* ===================================================
+     ACCENT PALETTE (scores, highlights, tags)
+     =================================================== */
+  --accent-violet:    #8b5cf6;
+  --accent-violet-bg: rgba(139, 92, 246, 0.12);
+  --accent-teal:      #14b8a6;
+  --accent-teal-bg:   rgba(20, 184, 166, 0.12);
+  --accent-amber:     #f59e0b;
+  --accent-amber-bg:  rgba(245, 158, 11, 0.12);
+  --accent-rose:      #f43f5e;
+  --accent-rose-bg:   rgba(244, 63, 94, 0.12);
+  --accent-sky:       #0ea5e9;
+  --accent-sky-bg:    rgba(14, 165, 233, 0.12);
+
+  /* ===================================================
+     TYPOGRAPHY
+     =================================================== */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+  --font-2xs:  0.6875rem;  /* 11px */
+  --font-xs:   0.75rem;    /* 12px */
+  --font-sm:   0.8125rem;  /* 13px */
+  --font-base: 0.875rem;   /* 14px */
+  --font-md:   1rem;       /* 16px */
+  --font-lg:   1.125rem;   /* 18px */
+  --font-xl:   1.25rem;    /* 20px */
+  --font-2xl:  1.5rem;     /* 24px */
+  --font-3xl:  1.875rem;   /* 30px */
+  --font-4xl:  2.25rem;    /* 36px */
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+  --weight-bold:    700;
+
+  --leading-tight:  1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* ===================================================
+     SPACING (4px base grid)
+     =================================================== */
+  --space-0:  0;
+  --space-px: 1px;
+  --space-0\.5: 0.125rem;  /* 2px */
+  --space-1:  0.25rem;     /* 4px */
+  --space-1\.5: 0.375rem;  /* 6px */
+  --space-2:  0.5rem;      /* 8px */
+  --space-2\.5: 0.625rem;  /* 10px */
+  --space-3:  0.75rem;     /* 12px */
+  --space-3\.5: 0.875rem;  /* 14px */
+  --space-4:  1rem;        /* 16px */
+  --space-5:  1.25rem;     /* 20px */
+  --space-6:  1.5rem;      /* 24px */
+  --space-7:  1.75rem;     /* 28px */
+  --space-8:  2rem;        /* 32px */
+  --space-10: 2.5rem;      /* 40px */
+  --space-12: 3rem;        /* 48px */
+  --space-14: 3.5rem;      /* 56px */
+  --space-16: 4rem;        /* 64px */
+
+  /* ===================================================
+     BORDER RADIUS
+     =================================================== */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
+  --radius-full: 9999px;
+
+  /* ===================================================
+     BOX SHADOWS
+     =================================================== */
+  --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm:  0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-xl:  0 16px 48px rgba(0, 0, 0, 0.35);
+  --shadow-glow-brand: 0 0 20px rgba(59, 130, 246, 0.15);
+  --shadow-glow-success: 0 0 20px rgba(16, 185, 129, 0.15);
+
+  /* ===================================================
+     TRANSITIONS
+     =================================================== */
+  --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* ===================================================
+     Z-INDEX SCALE
+     =================================================== */
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-sidebar:  300;
+  --z-overlay:  400;
+  --z-modal:    500;
+  --z-toast:    600;
+
+  /* ===================================================
+     LAYOUT
+     =================================================== */
+  --sidebar-width:           240px;
+  --sidebar-collapsed-width: 68px;
+  --header-height:           60px;
+  --content-max-width:       1280px;
+}
+
+:root[data-theme="light"] {
+  /* SURFACE / BACKGROUNDS */
+  --surface-bg:       #f8fafc;
+  --surface-card:     #ffffff;
+  --surface-raised:   #f1f5f9;
+  --surface-hover:    #e2e8f0;
+  --surface-border:   rgba(15, 23, 42, 0.08);
+  --surface-border-strong: rgba(15, 23, 42, 0.15);
+  --surface-overlay:  rgba(255, 255, 255, 0.85);
+
+  /* TEXT */
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #64748b;
+  --text-disabled:  #94a3b8;
+  --text-inverse:   #ffffff;
+
+  /* STATUS BACKGROUND TWEAKS (better contrast on light) */
+  --success-bg:  rgba(16, 185, 129, 0.15);
+  --warning-bg:  rgba(245, 158, 11, 0.15);
+  --error-bg:  rgba(239, 68, 68, 0.15);
+  --info-bg:  rgba(6, 182, 212, 0.15);
+}

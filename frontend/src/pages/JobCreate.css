@@ -1,0 +1,483 @@
+/**
+ * Job Create Page Styles
+ * Matches the app's dark theme design system.
+ */
+
+.job-create-page {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Page Header */
+.job-create-page .page-header {
+  margin-bottom: 2rem;
+}
+
+.job-create-page .page-header h1 {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.job-create-page .page-header p {
+  color: #94a3b8;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Error Banner */
+.job-create-page .error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  color: #f87171;
+  font-size: 0.9rem;
+}
+
+.job-create-page .error-banner svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Form */
+.job-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Form Section Card */
+.form-section {
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 20px;
+  padding: 2rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem;
+}
+
+.section-title svg {
+  width: 22px;
+  height: 22px;
+  color: #818cf8;
+}
+
+/* Form Group */
+.job-form .form-group {
+  margin-bottom: 1.25rem;
+  flex: 1;
+}
+
+.job-form .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.job-form label {
+  display: block;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.job-form input[type="text"],
+.job-form input[type="number"],
+.job-form select,
+.job-form textarea {
+  width: 100%;
+  background: rgba(15, 15, 26, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  font-size: 0.95rem;
+  font-family: "Inter", sans-serif;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.job-form textarea {
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 160px;
+}
+
+.job-form input::placeholder,
+.job-form textarea::placeholder {
+  color: #64748b;
+}
+
+.job-form input:focus,
+.job-form select:focus,
+.job-form textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.job-form input:disabled,
+.job-form select:disabled,
+.job-form textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.job-form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+/* Form Row (side-by-side fields) */
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-row .form-group {
+  margin-bottom: 0;
+}
+
+.salary-row .form-group:first-child {
+  flex: 0.7;
+}
+
+/* Character Count */
+.job-form .char-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.job-form .char-count .valid {
+  color: #34d399;
+}
+
+.job-form .char-count .invalid {
+  color: #f87171;
+}
+
+.job-form .char-count .min-chars {
+  color: #64748b;
+}
+
+/* Criteria / Skills */
+.criteria-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.criteria-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.88rem;
+}
+
+.criteria-name {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.must-have-tag {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.weight-tag {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.remove-criteria-btn {
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.remove-criteria-btn:hover {
+  color: #f87171;
+}
+
+.remove-criteria-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Add Criteria Row */
+.criteria-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.criteria-input {
+  flex: 1;
+}
+
+.must-have-check {
+  display: flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  color: #94a3b8 !important;
+  font-size: 0.85rem !important;
+  white-space: nowrap;
+  cursor: pointer;
+  margin-bottom: 0 !important;
+}
+
+.must-have-check input[type="checkbox"] {
+  width: auto;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+.weight-input {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.weight-input label {
+  color: #94a3b8 !important;
+  font-size: 0.85rem !important;
+  margin-bottom: 0 !important;
+  white-space: nowrap;
+}
+
+.weight-input input[type="number"] {
+  width: 60px !important;
+  text-align: center;
+  padding: 0.5rem !important;
+}
+
+.add-criteria-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #818cf8;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.add-criteria-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.add-criteria-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.3);
+}
+
+.add-criteria-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Form Actions */
+.job-form .form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.job-form .cancel-btn {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.job-form .cancel-btn:hover:not(:disabled) {
+  background: rgba(100, 116, 139, 0.3);
+  color: #fff;
+}
+
+.job-form .submit-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.job-form .submit-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.job-form .submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+}
+
+.job-form .submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.job-form .btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .job-create-page {
+    padding: 1rem;
+  }
+
+  .form-section {
+    padding: 1.5rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .form-row .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .criteria-input-row {
+    flex-wrap: wrap;
+  }
+
+  .criteria-input {
+    width: 100%;
+  }
+
+  .job-form .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .job-form .cancel-btn,
+  .job-form .submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Status Toggle */
+.status-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.toggle-btn:hover:not(:disabled) {
+  border-color: rgba(100, 116, 139, 0.4);
+}
+
+.toggle-btn.active.open {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.toggle-btn.active.draft {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
+
+.toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.toggle-dot.open {
+  background: #10b981;
+}
+
+.toggle-dot.draft {
+  background: #94a3b8;
+}
