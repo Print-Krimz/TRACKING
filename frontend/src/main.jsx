@@ -13,6 +13,8 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./context/ToastContext.jsx";
 import "./design-tokens.css";
 import "./App.css";
+import "./components/ui/Primitives.css";
+import "./operational-design.css";
 
 /**
  * React 18 createRoot API for concurrent features

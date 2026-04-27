@@ -100,6 +100,13 @@ def get_current_user_info(
         id=current_user.id,
         username=current_user.username,
         email=current_user.email,
+        phone=current_user.phone,
+        location=current_user.location,
+        current_title=current_user.current_title,
+        years_experience=current_user.years_experience,
+        linkedin_url=current_user.linkedin_url,
+        portfolio_url=current_user.portfolio_url,
+        professional_summary=current_user.professional_summary,
         role_id=current_user.role_id,
         role_name=current_user.role.name if current_user.role else None
     )

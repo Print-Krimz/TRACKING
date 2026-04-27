@@ -61,6 +61,82 @@ def ensure_application_status_enum_values() -> None:
         connection.commit()
 
 
+def ensure_deployment_contract_alert_schema() -> None:
+    """
+    Ensure deployment contract alert table and indexes exist.
+
+    This helper keeps existing deployments intact while introducing
+    a persisted alert history table in environments where tables already exist.
+    """
+    if engine.url.get_backend_name() != "postgresql":
+        return
+
+    with engine.connect() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS deployment_contract_alert (
+                    id SERIAL PRIMARY KEY,
+                    deployment_id INTEGER NOT NULL,
+                    contract_end_date TIMESTAMP NOT NULL,
+                    stage_code VARCHAR(20) NOT NULL,
+                    days_remaining INTEGER NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    email_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    email_error TEXT NULL,
+                    CONSTRAINT uq_deployment_contract_alert_stage
+                        UNIQUE (deployment_id, contract_end_date, stage_code),
+                    CONSTRAINT fk_deployment_contract_alert_deployment
+                        FOREIGN KEY (deployment_id) REFERENCES deployment (id)
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_dca_created_at "
+                "ON deployment_contract_alert (created_at)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_dca_stage_code "
+                "ON deployment_contract_alert (stage_code)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_dca_deployment_id "
+                "ON deployment_contract_alert (deployment_id)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_dca_email_status "
+                "ON deployment_contract_alert (email_status)"
+            )
+        )
+        connection.commit()
+
+
+def ensure_user_profile_fields() -> None:
+    """
+    Ensure candidate professional profile columns exist on `user` table.
+    """
+    if engine.url.get_backend_name() != "postgresql":
+        return
+
+    with engine.connect() as connection:
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS phone VARCHAR(30)"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS location VARCHAR(120)"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS current_title VARCHAR(120)"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS years_experience INTEGER"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255)"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS portfolio_url VARCHAR(255)"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS professional_summary VARCHAR(2000)"))
+        connection.commit()
+
+
 def get_session() -> Generator[Session, None, None]:
     """
     Dependency injection function for database sessions.

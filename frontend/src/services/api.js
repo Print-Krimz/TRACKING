@@ -348,17 +348,30 @@ export const extractJobKeywords = async (jobId) => {
 // =============================================================================
 
 /**
- * Apply to a job.
+ * Get role-based quiz questions for a job application.
+ *
+ * @param {number} jobId - ID of job to apply to
+ * @returns {Promise<Object>} Quiz payload
+ */
+export const getJobQuiz = async (jobId) => {
+  const response = await api.get(`/applications/quiz/${jobId}`);
+  return response.data;
+};
+
+/**
+ * Apply to a job with completed quiz answers.
  * Requires 'apply_to_job' permission (Candidate only).
  *
  * @param {number} jobId - ID of job to apply to
  * @param {number} resumeId - Optional resume ID
- * @returns {Promise<Object>} Created application
+ * @param {Array} quizAnswers - Required quiz answers
+ * @returns {Promise<Object>} Created application with quiz result
  */
-export const applyToJob = async (jobId, resumeId = null) => {
+export const applyToJob = async (jobId, resumeId = null, quizAnswers = []) => {
   const response = await api.post("/applications/", {
     job_id: jobId,
     resume_id: resumeId,
+    quiz_answers: quizAnswers,
   });
   return response.data;
 };
@@ -427,6 +440,69 @@ export const getMyApplications = async (options = {}) => {
   return response.data;
 };
 
+export const getApplicationMessages = async (
+  applicationId,
+  { page = 1, limit = 50, signal } = {},
+) => {
+  const response = await api.get(`/applications/${applicationId}/messages`, {
+    params: { page, limit },
+    signal,
+  });
+  return response.data;
+};
+
+export const sendApplicationMessage = async (applicationId, body) => {
+  const response = await api.post(`/applications/${applicationId}/messages`, { body });
+  return response.data;
+};
+
+export const markApplicationMessagesRead = async (applicationId, messageIds = null) => {
+  const response = await api.patch(`/applications/${applicationId}/messages/read`, {
+    message_ids: messageIds,
+  });
+  return response.data;
+};
+
+export const getUnreadMessageCount = async () => {
+  const response = await api.get("/messages/unread-count");
+  return response.data;
+};
+
+export const createInterview = async (applicationId, data) => {
+  const response = await api.post(`/applications/${applicationId}/interviews`, data);
+  return response.data;
+};
+
+export const getApplicationInterviews = async (applicationId) => {
+  const response = await api.get(`/applications/${applicationId}/interviews`);
+  return response.data;
+};
+
+export const updateInterview = async (interviewId, data) => {
+  const response = await api.patch(`/interviews/${interviewId}`, data);
+  return response.data;
+};
+
+export const getUpcomingInterviews = async (params = {}) => {
+  const response = await api.get("/interviews/upcoming", { params });
+  return response.data;
+};
+
+export const getNotifications = async (params = {}) => {
+  const response = await api.get("/notifications/", { params });
+  return response.data;
+};
+
+export const markNotificationRead = async (notificationId) => {
+  const response = await api.patch(`/notifications/${notificationId}/read`);
+  return response.data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const response = await api.patch("/notifications/read-all");
+  return response.data;
+};
+
 export const getJobMatchBreakdown = async (appId) => {
   const response = await api.get(`/matching/applications/${appId}/breakdown`);
   return response.data;
@@ -469,6 +545,11 @@ export const createDeployment = async (deploymentData) => {
 
 export const updateDeploymentStatus = async (deploymentId, updateData) => {
   const response = await api.put(`/deployments/${deploymentId}`, updateData);
+  return response.data;
+};
+
+export const getDeploymentContractAlerts = async (params = {}) => {
+  const response = await api.get("/deployments/contract-alerts", { params });
   return response.data;
 };
 

@@ -17,6 +17,8 @@ import {
 } from "../services/api";
 import AnonymousName from "../components/AnonymousName";
 import DocumentViewerModal from "../components/DocumentViewerModal";
+import ApplicationMessagesPanel from "../components/ApplicationMessagesPanel";
+import ScheduleInterviewModal from "../components/ScheduleInterviewModal";
 import {
   CheckCircle2,
   Star,
@@ -62,6 +64,8 @@ const AllApplicants = () => {
   // Vault Modal State
   const [vaultModalUser, setVaultModalUser] = useState(null);
   const [vaultModalName, setVaultModalName] = useState("");
+  const [activeMessagesAppId, setActiveMessagesAppId] = useState(null);
+  const [interviewApp, setInterviewApp] = useState(null);
 
   // Filters from URL params for shareable state
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
@@ -247,6 +251,14 @@ const AllApplicants = () => {
     if (score >= 40)
       return { color: "#f97316", bg: "rgba(249,115,22,0.15)", label: "Fair" };
     return { color: "#ef4444", bg: "rgba(239,68,68,0.15)", label: "Low" };
+  };
+
+  const formatQuizOutcome = (value) => {
+    if (!value) return "";
+    return value
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
   };
 
   const clearFilters = () => {
@@ -511,35 +523,49 @@ const AllApplicants = () => {
 
               {/* Score */}
               <div className="col-score">
-                {app.match_score != null ? (
-                  (() => {
-                    const level = getScoreLevel(app.match_score);
-                    return (
-                      <div className="score-cell">
-                        <span
-                          className="score-badge"
-                          style={{
-                            backgroundColor: level.bg,
-                            color: level.color,
-                            borderColor: `${level.color}40`,
-                          }}
-                        >
-                          {app.match_score}%
-                        </span>
-                        <span
-                          className="score-label"
-                          style={{ color: level.color }}
-                        >
-                          {level.label}
-                        </span>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <span className="no-score">—</span>
-                )}
-              </div>
+                <div className="score-cell">
+                  {app.match_score != null ? (
+                    (() => {
+                      const level = getScoreLevel(app.match_score);
+                      return (
+                        <>
+                          <span
+                            className="score-badge"
+                            style={{
+                              backgroundColor: level.bg,
+                              color: level.color,
+                              borderColor: `${level.color}40`,
+                            }}
+                          >
+                            AI {app.match_score}%
+                          </span>
+                          <span
+                            className="score-label"
+                            style={{ color: level.color }}
+                          >
+                            {level.label}
+                          </span>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <span className="no-score">AI -</span>
+                  )}
 
+                  {app.quiz_result ? (
+                    <>
+                      <span className="quiz-badge">
+                        Quiz {app.quiz_result.score_percent}%
+                      </span>
+                      <span className="quiz-label">
+                        {formatQuizOutcome(app.quiz_result.outcome)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="no-score">Quiz -</span>
+                  )}
+                </div>
+              </div>
               {/* Date */}
               <div className="col-date">
                 <span className="date-text">
@@ -613,6 +639,27 @@ const AllApplicants = () => {
                 >
                   <Users size={18} />
                 </button>
+                <button
+                  className="action-btn"
+                  onClick={() =>
+                    setActiveMessagesAppId((prev) => (prev === app.id ? null : app.id))
+                  }
+                  title="Messages"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 5h16v10H7l-3 3V5z" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </button>
+                <button
+                  className="action-btn"
+                  onClick={() => setInterviewApp(app)}
+                  title="Schedule Interview"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </button>
               </div>
             </div>
           ))}
@@ -649,6 +696,18 @@ const AllApplicants = () => {
             setVaultModalUser(null);
             setVaultModalName("");
           }}
+        />
+      )}
+      {activeMessagesAppId && (
+        <div style={{ marginTop: "16px" }}>
+          <ApplicationMessagesPanel applicationId={activeMessagesAppId} />
+        </div>
+      )}
+      {interviewApp && (
+        <ScheduleInterviewModal
+          application={interviewApp}
+          onClose={() => setInterviewApp(null)}
+          onScheduled={() => setSuccess("Interview scheduled")}
         />
       )}
     </div>

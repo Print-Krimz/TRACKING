@@ -1,0 +1,100 @@
+.app-msg-panel {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+}
+
+.app-msg-header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.app-msg-header h4 {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+}
+
+.app-msg-error {
+  margin: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--error-bg);
+  color: var(--error-500);
+  font-size: var(--font-xs);
+}
+
+.app-msg-body {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.app-msg-empty {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+}
+
+.app-msg-item {
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-bg);
+}
+
+.app-msg-item p {
+  margin: var(--space-1) 0 0;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.app-msg-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.app-msg-compose {
+  border-top: 1px solid var(--surface-border);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.app-msg-compose textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 56px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-bg);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+}
+
+.app-msg-compose button {
+  align-self: flex-end;
+  border: none;
+  background: var(--brand-500);
+  color: #fff;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.app-msg-compose button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

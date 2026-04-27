@@ -1,0 +1,80 @@
+.iv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--surface-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+}
+
+.iv-modal {
+  width: min(520px, 92vw);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.iv-modal h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.iv-modal p {
+  margin: var(--space-2) 0 var(--space-4);
+  color: var(--text-secondary);
+}
+
+.iv-modal form {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.iv-modal label {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+.iv-modal input,
+.iv-modal select,
+.iv-modal textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-bg);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+}
+
+.iv-actions {
+  margin-top: var(--space-3);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.iv-actions button {
+  border: 1px solid var(--surface-border-strong);
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.iv-actions button[type="submit"] {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+  color: #fff;
+}
+
+.iv-error {
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--error-bg);
+  color: var(--error-500);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+}

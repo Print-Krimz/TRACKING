@@ -84,6 +84,13 @@ def register_user(session: Session, request: RegisterRequest) -> UserResponse:
         id=new_user.id,
         username=new_user.username,
         email=new_user.email,
+        phone=new_user.phone,
+        location=new_user.location,
+        current_title=new_user.current_title,
+        years_experience=new_user.years_experience,
+        linkedin_url=new_user.linkedin_url,
+        portfolio_url=new_user.portfolio_url,
+        professional_summary=new_user.professional_summary,
         role_name=role.name
     )
 
@@ -163,6 +170,13 @@ def login_user(session: Session, request: LoginRequest) -> LoginResponse:
             id=user.id,
             username=user.username,
             email=user.email,
+            phone=user.phone,
+            location=user.location,
+            current_title=user.current_title,
+            years_experience=user.years_experience,
+            linkedin_url=user.linkedin_url,
+            portfolio_url=user.portfolio_url,
+            professional_summary=user.professional_summary,
             role_name=role_name
         )
     )

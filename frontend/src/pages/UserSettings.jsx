@@ -14,7 +14,14 @@ const UserSettings = () => {
   // Profile State
   const [profileForm, setProfileForm] = useState({
     username: "",
-    email: ""
+    email: "",
+    phone: "",
+    location: "",
+    current_title: "",
+    years_experience: "",
+    linkedin_url: "",
+    portfolio_url: "",
+    professional_summary: "",
   });
   const [profileLoading, setProfileLoading] = useState(false);
 
@@ -37,7 +44,17 @@ const UserSettings = () => {
     if (user) {
       setProfileForm({
         username: user.username || "",
-        email: user.email || ""
+        email: user.email || "",
+        phone: user.phone || "",
+        location: user.location || "",
+        current_title: user.current_title || "",
+        years_experience:
+          user.years_experience === null || user.years_experience === undefined
+            ? ""
+            : String(user.years_experience),
+        linkedin_url: user.linkedin_url || "",
+        portfolio_url: user.portfolio_url || "",
+        professional_summary: user.professional_summary || "",
       });
     }
   }, [user]);
@@ -53,16 +70,39 @@ const UserSettings = () => {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+    const urlPattern = /^https?:\/\/.+/i;
+    if (profileForm.linkedin_url && !urlPattern.test(profileForm.linkedin_url)) {
+      showToast("LinkedIn URL must start with http:// or https://", "error");
+      return;
+    }
+    if (profileForm.portfolio_url && !urlPattern.test(profileForm.portfolio_url)) {
+      showToast("Portfolio URL must start with http:// or https://", "error");
+      return;
+    }
+    const exp =
+      profileForm.years_experience === ""
+        ? null
+        : Number(profileForm.years_experience);
+    if (exp !== null && (!Number.isFinite(exp) || exp < 0)) {
+      showToast("Years of experience must be 0 or greater.", "error");
+      return;
+    }
     setProfileLoading(true);
     try {
-      const updatedUser = await updateProfile(profileForm);
+      const payload = {
+        ...profileForm,
+        years_experience: exp,
+        linkedin_url: profileForm.linkedin_url || null,
+        portfolio_url: profileForm.portfolio_url || null,
+      };
+      const updatedUser = await updateProfile(payload);
       setUser(updatedUser); // Update Auth Context
       
       // Update local storage if needed
       const stored = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem("user", JSON.stringify({ ...stored, ...updatedUser }));
 
-      showToast("Profile updated successfully!", "success");
+      showToast("Profile updated successfully", "success");
     } catch (err) {
       console.error(err);
       showToast(err.response?.data?.detail || "Failed to update profile", "error");
@@ -84,7 +124,7 @@ const UserSettings = () => {
         current_password: passwordForm.current_password,
         new_password: passwordForm.new_password
       });
-      showToast("Password changed successfully!", "success");
+      showToast("Password changed successfully", "success");
       setPasswordForm({
         current_password: "",
         new_password: "",
@@ -113,20 +153,29 @@ const UserSettings = () => {
       </div>
 
       <div className="settings-layout">
-        <div className="settings-sidebar">
+        <div className="settings-sidebar" role="tablist" aria-label="Settings sections">
           <button 
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "profile"}
             className={`settings-tab ${activeTab === "profile" ? "active" : ""}`}
             onClick={() => setActiveTab("profile")}
           >
             <User size={18} /> Profile Information
           </button>
           <button 
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "security"}
             className={`settings-tab ${activeTab === "security" ? "active" : ""}`}
             onClick={() => setActiveTab("security")}
           >
             <Lock size={18} /> Security & Password
           </button>
           <button 
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "preferences"}
             className={`settings-tab ${activeTab === "preferences" ? "active" : ""}`}
             onClick={() => setActiveTab("preferences")}
           >
@@ -144,8 +193,9 @@ const UserSettings = () => {
               
               <form onSubmit={handleProfileSubmit} className="settings-form">
                 <div className="form-group">
-                  <label>Username</label>
+                  <label htmlFor="settings-username">Username</label>
                   <input 
+                    id="settings-username"
                     type="text" 
                     name="username" 
                     value={profileForm.username} 
@@ -155,8 +205,9 @@ const UserSettings = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email Address</label>
+                  <label htmlFor="settings-email">Email Address</label>
                   <input 
+                    id="settings-email"
                     type="email" 
                     name="email" 
                     value={profileForm.email} 
@@ -165,8 +216,85 @@ const UserSettings = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Role</label>
-                  <input type="text" value={user?.role_name || "Unknown"} disabled className="disabled-input" />
+                  <label htmlFor="settings-phone">Phone</label>
+                  <input
+                    id="settings-phone"
+                    type="text"
+                    name="phone"
+                    value={profileForm.phone}
+                    onChange={handleProfileChange}
+                    maxLength="30"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="settings-location">Location</label>
+                  <input
+                    id="settings-location"
+                    type="text"
+                    name="location"
+                    value={profileForm.location}
+                    onChange={handleProfileChange}
+                    maxLength="120"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="settings-current-title">Current Title</label>
+                  <input
+                    id="settings-current-title"
+                    type="text"
+                    name="current_title"
+                    value={profileForm.current_title}
+                    onChange={handleProfileChange}
+                    maxLength="120"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="settings-years-experience">Years of Experience</label>
+                  <input
+                    id="settings-years-experience"
+                    type="number"
+                    name="years_experience"
+                    value={profileForm.years_experience}
+                    onChange={handleProfileChange}
+                    min="0"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="settings-linkedin-url">LinkedIn URL</label>
+                  <input
+                    id="settings-linkedin-url"
+                    type="url"
+                    name="linkedin_url"
+                    value={profileForm.linkedin_url}
+                    onChange={handleProfileChange}
+                    placeholder="https://linkedin.com/in/..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="settings-portfolio-url">Portfolio URL</label>
+                  <input
+                    id="settings-portfolio-url"
+                    type="url"
+                    name="portfolio_url"
+                    value={profileForm.portfolio_url}
+                    onChange={handleProfileChange}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="settings-professional-summary">Professional Summary</label>
+                  <textarea
+                    id="settings-professional-summary"
+                    name="professional_summary"
+                    value={profileForm.professional_summary}
+                    onChange={handleProfileChange}
+                    rows={4}
+                    maxLength="2000"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="settings-role">Role</label>
+                  <input id="settings-role" type="text" value={user?.role_name || "Unknown"} disabled className="disabled-input" />
                   <small className="help-text">Roles cannot be changed by the user. Contact an administrator.</small>
                 </div>
                 
@@ -191,8 +319,9 @@ const UserSettings = () => {
 
               <form onSubmit={handlePasswordSubmit} className="settings-form">
                 <div className="form-group">
-                  <label>Current Password</label>
+                  <label htmlFor="settings-current-password">Current Password</label>
                   <input 
+                    id="settings-current-password"
                     type="password" 
                     name="current_password" 
                     value={passwordForm.current_password} 
@@ -202,8 +331,9 @@ const UserSettings = () => {
                 </div>
                 <div className="divider"></div>
                 <div className="form-group">
-                  <label>New Password</label>
+                  <label htmlFor="settings-new-password">New Password</label>
                   <input 
+                    id="settings-new-password"
                     type="password" 
                     name="new_password" 
                     value={passwordForm.new_password} 
@@ -213,8 +343,9 @@ const UserSettings = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Confirm New Password</label>
+                  <label htmlFor="settings-confirm-password">Confirm New Password</label>
                   <input 
+                    id="settings-confirm-password"
                     type="password" 
                     name="confirm_password" 
                     value={passwordForm.confirm_password} 
@@ -249,7 +380,7 @@ const UserSettings = () => {
                     </div>
                   </div>
                   <label className="toggle-switch">
-                    <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} />
+                    <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} aria-label="Toggle dark mode" />
                     <span className="slider round"></span>
                   </label>
                 </div>
@@ -263,7 +394,7 @@ const UserSettings = () => {
                     </div>
                   </div>
                   <label className="toggle-switch">
-                    <input type="checkbox" checked={emailAlerts} onChange={() => setEmailAlerts(!emailAlerts)} />
+                    <input type="checkbox" checked={emailAlerts} onChange={() => setEmailAlerts(!emailAlerts)} aria-label="Toggle email notifications" />
                     <span className="slider round"></span>
                   </label>
                 </div>

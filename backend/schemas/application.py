@@ -9,12 +9,66 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from models.application import ApplicationStatus
+from models.quiz import QuizOutcome
+
+
+class QuizAnswerRequest(BaseModel):
+    """One selected answer for a quiz question."""
+
+    question_id: str
+    selected_option: int = Field(ge=0, le=3)
+
+
+class JobQuizQuestionResponse(BaseModel):
+    """Quiz question payload shown to candidates."""
+
+    question_id: str
+    skill_name: str
+    question_text: str
+    options: List[str]
+    difficulty: str = "medium"
+    is_must_have: bool = False
+
+
+class JobQuizResponse(BaseModel):
+    """Role-based quiz to complete before applying."""
+
+    job_id: int
+    job_title: str
+    total_questions: int
+    pass_score_percent: int
+    must_have_pass_percent: int
+    questions: List[JobQuizQuestionResponse]
+
+
+class QuizSkillBreakdownItem(BaseModel):
+    """Per-skill score summary."""
+
+    skill_name: str
+    total: int
+    correct: int
+    percent: int
+    is_must_have: bool = False
+
+
+class ApplicationQuizResultResponse(BaseModel):
+    """Quiz result details attached to an application."""
+
+    total_questions: int
+    correct_answers: int
+    score_percent: int
+    must_have_score_percent: int
+    passed: bool
+    outcome: QuizOutcome
+    breakdown: List[QuizSkillBreakdownItem] = []
+    submitted_at: datetime
 
 
 class ApplicationCreateRequest(BaseModel):
     """Schema for creating a job application."""
     job_id: int
     resume_id: Optional[int] = None  # Optional - can apply without resume
+    quiz_answers: List[QuizAnswerRequest] = Field(default_factory=list)
 
 
 class ApplicationStatusUpdate(BaseModel):
@@ -35,6 +89,7 @@ class ApplicationResponse(BaseModel):
     match_score: Optional[int]
     is_shortlisted: bool = False
     in_talent_pool: bool = False
+    quiz_result: Optional[ApplicationQuizResultResponse] = None
     applied_at: datetime
     updated_at: datetime
 
@@ -59,6 +114,8 @@ class CandidateApplicationResponse(BaseModel):
     company_department: Optional[str]
     location: Optional[str]
     status: ApplicationStatus
+    quiz_outcome: Optional[QuizOutcome] = None
+    quiz_score_percent: Optional[int] = None
     applied_at: datetime
     updated_at: datetime
 

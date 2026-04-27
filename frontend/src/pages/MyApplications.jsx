@@ -12,6 +12,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyApplications } from "../services/api";
 import { Inbox, Search, MessageSquare, ClipboardList, Award, MapPin, XCircle, Undo2 } from "lucide-react";
+import ApplicationMessagesPanel from "../components/ApplicationMessagesPanel";
+import ApplicationInterviewTimeline from "../components/ApplicationInterviewTimeline";
 import "./MyApplications.css";
 
 // Application status stages for timeline
@@ -38,6 +40,7 @@ const MyApplications = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedMessageAppId, setExpandedMessageAppId] = useState(null);
 
   useEffect(() => {
     loadApplications();
@@ -84,6 +87,14 @@ const MyApplications = () => {
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     return `${Math.floor(diffDays / 30)} months ago`;
+  };
+
+  const formatOutcome = (value) => {
+    if (!value) return "";
+    return value
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
   };
 
   if (loading) {
@@ -205,6 +216,17 @@ const MyApplications = () => {
                 )}
 
                 <div className="application-footer">
+                  {(app.quiz_score_percent != null || app.quiz_outcome) && (
+                    <span className="quiz-summary">
+                      Quiz:{" "}
+                      {app.quiz_score_percent != null
+                        ? `${app.quiz_score_percent}%`
+                        : "N/A"}
+                      {app.quiz_outcome
+                        ? ` (${formatOutcome(app.quiz_outcome)})`
+                        : ""}
+                    </span>
+                  )}
                   <span className="last-updated">
                     Last updated: {formatDate(app.updated_at)}
                   </span>
@@ -214,7 +236,21 @@ const MyApplications = () => {
                   >
                     View Job Details
                   </button>
+                  <button
+                    className="view-job-btn"
+                    onClick={() =>
+                      setExpandedMessageAppId((prev) => (prev === app.id ? null : app.id))
+                    }
+                  >
+                    {expandedMessageAppId === app.id ? "Hide Messages" : "Messages"}
+                  </button>
                 </div>
+                <ApplicationInterviewTimeline applicationId={app.id} />
+                {expandedMessageAppId === app.id && (
+                  <div style={{ marginTop: "12px" }}>
+                    <ApplicationMessagesPanel applicationId={app.id} title="Recruiter Messages" />
+                  </div>
+                )}
               </div>
             );
           })}

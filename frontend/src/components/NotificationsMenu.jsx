@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { getDashboardAlerts, getMyApplications } from "../services/api";
+import {
+  getDashboardAlerts,
+  getDeploymentContractAlerts,
+  getNotifications,
+  getMyApplications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "../services/api";
 import { AlertTriangle, AlertCircle, Lightbulb } from "lucide-react";
 import "./NotificationsMenu.css";
 
@@ -29,11 +36,15 @@ const NotificationsMenu = () => {
   );
 
   const markAsRead = useCallback(
-    (notificationId) => {
+    async (notificationId) => {
       if (readIds.has(notificationId)) return;
       const next = new Set(readIds);
       next.add(notificationId);
       saveReadIds(next);
+      if (notificationId.startsWith("notif-")) {
+        const rawId = notificationId.replace("notif-", "");
+        markNotificationRead(rawId).catch(() => {});
+      }
     },
     [readIds, saveReadIds],
   );
@@ -42,6 +53,7 @@ const NotificationsMenu = () => {
     const next = new Set(readIds);
     notifications.forEach((item) => next.add(item.id));
     saveReadIds(next);
+    markAllNotificationsRead().catch(() => {});
   }, [notifications, readIds, saveReadIds]);
 
   const unreadCount = useMemo(
@@ -135,17 +147,57 @@ const NotificationsMenu = () => {
     setLoading(true);
     try {
       if (isRecruiter || isAdmin || isControlPanelAdmin) {
-        const data = await getDashboardAlerts();
-        const mappedAlerts = (data?.alerts || []).map((alert) => ({
-          id: `alert-${alert.id}-${alert.count ?? 0}`,
+        const [notifData, analyticsData, contractData] = await Promise.all([
+          getNotifications({ limit: 100 }),
+          getDashboardAlerts(),
+          getDeploymentContractAlerts({ limit: 100 }),
+        ]);
+
+        const mappedSystemNotifications = (notifData?.notifications || []).map((n) => ({
+          id: `notif-${n.id}`,
+          type: n.type || "info",
+          message: n.message,
+          timestamp: n.created_at,
+          link: n.link || "/dashboard",
+        }));
+
+        const mappedContractAlerts = (contractData?.alerts || []).map((alert) => ({
+          id: `contract-alert-${alert.id}`,
+          type: alert.type || "warning",
+          message: alert.message,
+          timestamp: alert.created_at,
+          link: alert.link || "/deployments",
+        }));
+
+        const mappedAnalyticsAlerts = (analyticsData?.alerts || []).map((alert) => ({
+          id: `analytics-alert-${alert.id}-${alert.count ?? 0}`,
           type: alert.type || "info",
           message: alert.message,
           timestamp: new Date().toISOString(),
           link: "/dashboard",
         }));
-        setNotifications(mappedAlerts);
+
+        const merged = [
+          ...mappedSystemNotifications,
+          ...mappedContractAlerts,
+          ...mappedAnalyticsAlerts,
+        ].sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
+        );
+
+        setNotifications(merged);
       } else {
-        const data = await getMyApplications();
+        const [notifData, data] = await Promise.all([
+          getNotifications({ limit: 100 }),
+          getMyApplications(),
+        ]);
+        const mappedSystemNotifications = (notifData?.notifications || []).map((n) => ({
+          id: `notif-${n.id}`,
+          type: n.type || "info",
+          message: n.message,
+          timestamp: n.created_at,
+          link: n.link || "/my-applications",
+        }));
         const mappedApplications = (data?.applications || [])
           .map((application) => ({
             id: `application-${application.id}-${application.status}`,
@@ -155,7 +207,11 @@ const NotificationsMenu = () => {
             link: `/jobs/${application.job_id}`,
           }))
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        setNotifications(mappedApplications);
+        setNotifications(
+          [...mappedSystemNotifications, ...mappedApplications].sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
+          ),
+        );
       }
     } catch (err) {
       console.error("Failed to fetch notifications", err);

@@ -58,6 +58,13 @@ class User(SQLModel, table=True):
         index=True,
         description="Unique email address"
     )
+    phone: Optional[str] = Field(default=None, max_length=30)
+    location: Optional[str] = Field(default=None, max_length=120)
+    current_title: Optional[str] = Field(default=None, max_length=120)
+    years_experience: Optional[int] = Field(default=None, ge=0)
+    linkedin_url: Optional[str] = Field(default=None, max_length=255)
+    portfolio_url: Optional[str] = Field(default=None, max_length=255)
+    professional_summary: Optional[str] = Field(default=None, max_length=2000)
     hashed_password: str = Field(
         description="bcrypt-hashed password - NEVER store or return plain text"
     )

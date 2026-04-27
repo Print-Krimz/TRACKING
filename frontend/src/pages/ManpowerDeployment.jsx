@@ -287,6 +287,9 @@ const ManpowerDeployment = () => {
                   const days = getDaysRemaining(d.end_date);
                   const isExpired = days !== null && days < 0;
                   const isExpiring = days !== null && days >= 0 && days <= 30;
+                  const autoTerminatedByContract = (d.notes || "").includes(
+                    "[AUTO_TERMINATED_CONTRACT_EXPIRED",
+                  );
 
                   return (
                     <tr key={d.id} className={`row-${d.status}`}>
@@ -308,9 +311,16 @@ const ManpowerDeployment = () => {
                         </div>
                       </td>
                       <td>
-                        <span className={`status-pill pill-${d.status}`}>
-                          {d.status}
-                        </span>
+                        <div className="status-cell">
+                          <span className={`status-pill pill-${d.status}`}>
+                            {d.status}
+                          </span>
+                          {autoTerminatedByContract && (
+                            <span className="status-hint">
+                              Auto-terminated (Contract Expired)
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="date-cell">
                         {new Date(d.start_date).toLocaleDateString()}

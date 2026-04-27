@@ -113,6 +113,13 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    current_title: Optional[str] = None
+    years_experience: Optional[int] = None
+    linkedin_url: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    professional_summary: Optional[str] = None
     role_name: Optional[str] = Field(default=None, description="User's role name")
     
     class Config:

@@ -45,6 +45,13 @@ const ResumeDrawer = ({
     }
   };
 
+  const quizOutcome = application?.quiz_result?.outcome
+    ? application.quiz_result.outcome
+        .split("_")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ")
+    : null;
+
   if (!isOpen) return null;
 
   return (
@@ -69,6 +76,18 @@ const ResumeDrawer = ({
             <span className="drawer-score-value">
               {application?.match_score ? `${application.match_score}%` : "N/A"}
             </span>
+          </div>
+
+          <div className="drawer-score-box quiz">
+            <span className="drawer-score-label">Quiz Result</span>
+            <span className="drawer-score-value">
+              {application?.quiz_result?.score_percent != null
+                ? `${application.quiz_result.score_percent}%`
+                : "N/A"}
+            </span>
+            {quizOutcome && (
+              <span className="drawer-quiz-outcome">{quizOutcome}</span>
+            )}
           </div>
 
           <button

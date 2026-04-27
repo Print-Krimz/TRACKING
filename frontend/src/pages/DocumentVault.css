@@ -26,17 +26,18 @@
 
 .vault-content {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
+  grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.42fr);
   gap: var(--space-6);
   align-items: start;
 }
 
 /* Upload Card */
 .vault-upload-card {
-  background: var(--surface-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)) var(--surface-card);
   border: 1px solid var(--surface-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
+  box-shadow: var(--shadow-card);
 }
 
 .vault-upload-card h3 {
@@ -112,8 +113,9 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
+  min-height: 170px;
   padding: var(--space-8) var(--space-4);
-  border: 2px dashed var(--surface-border-strong);
+  border: 2px dashed rgba(59, 130, 246, 0.24);
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -121,19 +123,24 @@
 }
 
 .file-label:hover {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.file-input:focus-visible + .file-label {
   border-color: var(--brand-500);
-  background: rgba(59, 130, 246, 0.04);
+  box-shadow: var(--focus-ring);
 }
 
 .upload-icon {
-  width: 40px;
-  height: 40px;
-  color: var(--text-muted);
-}
-
-.upload-icon svg {
-  width: 40px;
-  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: var(--brand-300);
+  background: var(--surface-selected);
+  border-radius: var(--radius-md);
 }
 
 .file-name {
@@ -148,10 +155,11 @@
 }
 
 .vault-btn {
-  padding: var(--space-3) var(--space-6);
-  border-radius: var(--radius-lg);
-  font-weight: var(--weight-semibold);
-  font-size: var(--font-base);
+  min-height: var(--control-height);
+  padding: var(--button-padding);
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-bold);
+  font-size: var(--font-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
   border: none;
@@ -174,10 +182,11 @@
 
 /* Document List */
 .vault-list-card {
-  background: var(--surface-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)) var(--surface-card);
   border: 1px solid var(--surface-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
+  box-shadow: var(--shadow-card);
 }
 
 .vault-list-card h3 {
@@ -192,20 +201,6 @@
   padding: var(--space-8);
   color: var(--text-secondary);
   animation: pulse 1.5s ease-in-out infinite;
-}
-
-.vault-empty {
-  text-align: center;
-  padding: var(--space-10);
-}
-
-.vault-empty .empty-icon {
-  font-size: var(--font-4xl);
-  margin-bottom: var(--space-4);
-}
-
-.vault-empty p {
-  color: var(--text-muted);
 }
 
 .document-grid {
@@ -290,9 +285,9 @@
   transition: all var(--transition-fast);
 }
 
-.icon-btn svg {
-  width: 16px;
-  height: 16px;
+.icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .icon-btn.download {

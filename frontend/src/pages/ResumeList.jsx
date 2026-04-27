@@ -22,6 +22,14 @@ import ResumeUpload from "../components/ResumeUpload";
 import { useToast } from "../context/ToastContext";
 import { anonymizeContent } from "../utils/anonymize";
 import { deleteResume } from "../services/api";
+import {
+  Button,
+  EmptyState,
+  FilterBar,
+  SearchBar,
+  StatusBadge,
+} from "../components/ui";
+import { ChevronRight, FileText, Plus, Trash2 } from "lucide-react";
 import "./ResumeList.css";
 
 const ResumeList = () => {
@@ -105,46 +113,28 @@ const ResumeList = () => {
 
   return (
     <div className="resume-list-page">
-      {/* Page Header */}
       <div className="page-header">
         <div className="header-content">
           <h1>{isApplicant ? "My Resumes" : "All Resumes"}</h1>
-          {isApplicant && (
-            <button 
-              className="upload-toggle-btn"
-              onClick={() => setShowUpload(!showUpload)}
-            >
-              {showUpload ? "Cancel Upload" : "Submit New Resume"}
-            </button>
-          )}
           <p>
             {isApplicant
               ? "View and manage your submitted resumes"
               : "Browse and analyze applicant resumes"}
           </p>
         </div>
-        {isApplicant && !showUpload && (
-          <button onClick={() => setShowUpload(true)} className="add-resume-btn">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12 5V19M5 12H19"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Submit New Resume
-          </button>
+        {isApplicant && (
+          <Button
+            icon={showUpload ? undefined : Plus}
+            variant={showUpload ? "secondary" : "success"}
+            onClick={() => setShowUpload(!showUpload)}
+          >
+            {showUpload ? "Cancel upload" : "Submit new resume"}
+          </Button>
         )}
       </div>
 
       {showUpload && (
-        <div className="upload-container">
+        <div className="upload-section-container">
           <ResumeUpload 
             onSuccess={() => {
               setShowUpload(false);
@@ -155,32 +145,17 @@ const ResumeList = () => {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="filters-bar">
-        <div className="search-box">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <input
-            type="text"
+      <FilterBar
+        className="filters-bar"
+        search={
+          <SearchBar
             placeholder="Search resumes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
-
-        {canAnalyze && (
-          <div className="filter-buttons">
+        }
+        filters={canAnalyze && (
+          <div className="filter-buttons" aria-label="Resume status filters">
             <button
               className={`filter-btn ${filterStatus === "all" ? "active" : ""}`}
               onClick={() => setFilterStatus("all")}
@@ -201,52 +176,28 @@ const ResumeList = () => {
             </button>
           </div>
         )}
-      </div>
-
-      {showUpload && isApplicant && (
-        <div className="upload-section-container">
-          <ResumeUpload 
-            onSuccess={() => {
-              setShowUpload(false);
-              fetchResumes();
-            }} 
-            onCancel={() => setShowUpload(false)} 
-          />
-        </div>
-      )}
+      />
 
       {/* Resume Grid */}
       {filteredResumes.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h3>No resumes found</h3>
-          <p>
-            {searchTerm || filterStatus !== "all"
-              ? "Try adjusting your search or filter"
+        <EmptyState
+          icon={FileText}
+          title="No resumes found"
+          description={
+            searchTerm || filterStatus !== "all"
+              ? "Adjust the search or status filter to find a submitted resume."
               : isApplicant
-                ? "Submit your first resume to get started"
-                : "No resumes have been submitted yet"}
-          </p>
-          {isApplicant && !searchTerm && filterStatus === "all" && !showUpload && (
-            <button onClick={() => setShowUpload(true)} className="empty-action-btn">
-              Submit Your Resume
-            </button>
-          )}
-        </div>
+                ? "Submit your first resume to start AI analysis."
+                : "No resumes have been submitted yet."
+          }
+          action={
+            isApplicant && !searchTerm && filterStatus === "all" && !showUpload ? (
+              <Button icon={Plus} variant="primary" onClick={() => setShowUpload(true)}>
+                Submit resume
+              </Button>
+            ) : null
+          }
+        />
       ) : (
         <div className="resume-grid">
           {filteredResumes.map((resume) => {
@@ -268,10 +219,10 @@ const ResumeList = () => {
               }
             }
 
-            const getScoreColor = (s) => {
-              if (s >= 8) return "#10b981";
-              if (s >= 6) return "#f59e0b";
-              return "#ef4444";
+            const getScoreTone = (s) => {
+              if (s >= 8) return "strong";
+              if (s >= 6) return "medium";
+              return "low";
             };
 
             return (
@@ -299,21 +250,14 @@ const ResumeList = () => {
                   </div>
                   {resume.analysis_result ? (
                     score !== null ? (
-                      <span
-                        className="score-badge"
-                        style={{
-                          background: `${getScoreColor(score)}20`,
-                          color: getScoreColor(score),
-                          borderColor: `${getScoreColor(score)}40`,
-                        }}
-                      >
+                      <span className={`score-badge score-${getScoreTone(score)}`}>
                         {score}/10
                       </span>
                     ) : (
-                      <span className="status-badge analyzed">Analyzed</span>
+                      <StatusBadge tone="success">Analyzed</StatusBadge>
                     )
                   ) : (
-                    <span className="status-badge pending">Pending</span>
+                    <StatusBadge tone="warning">Pending</StatusBadge>
                   )}
                 </div>
 
@@ -333,29 +277,15 @@ const ResumeList = () => {
                       : canAnalyze
                         ? "Analyze Resume"
                         : "View Details"}
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M9 5L16 12L9 19"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <ChevronRight size={16} aria-hidden="true" />
                   </span>
                   {isApplicant && (
                     <button 
                       className="delete-card-btn"
                       onClick={(e) => handleDelete(e, resume.id)}
-                      title="Delete Resume"
+                      aria-label={`Delete resume ${resume.id}`}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      <Trash2 size={18} aria-hidden="true" />
                     </button>
                   )}
                 </div>

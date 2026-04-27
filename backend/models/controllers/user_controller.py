@@ -18,6 +18,7 @@ from models.user import User
 from models.role import Role
 from schemas.user import UserWithRole, UserListResponse, AssignRoleRequest, UserUpdateRequest, PasswordChangeRequest
 from dependencies import hash_password, verify_password
+from services.audit_service import log_audit
 
 
 def get_all_users(session: Session) -> UserListResponse:
@@ -46,6 +47,13 @@ def get_all_users(session: Session) -> UserListResponse:
             id=user.id,
             username=user.username,
             email=user.email,
+            phone=user.phone,
+            location=user.location,
+            current_title=user.current_title,
+            years_experience=user.years_experience,
+            linkedin_url=user.linkedin_url,
+            portfolio_url=user.portfolio_url,
+            professional_summary=user.professional_summary,
             role_id=user.role_id,
             role_name=user.role.name if user.role else None
         ))
@@ -76,6 +84,13 @@ def get_user_by_id(session: Session, user_id: int) -> Optional[UserWithRole]:
         id=user.id,
         username=user.username,
         email=user.email,
+        phone=user.phone,
+        location=user.location,
+        current_title=user.current_title,
+        years_experience=user.years_experience,
+        linkedin_url=user.linkedin_url,
+        portfolio_url=user.portfolio_url,
+        professional_summary=user.professional_summary,
         role_id=user.role_id,
         role_name=user.role.name if user.role else None
     )
@@ -135,6 +150,13 @@ def assign_role_to_user(
         id=user.id,
         username=user.username,
         email=user.email,
+        phone=user.phone,
+        location=user.location,
+        current_title=user.current_title,
+        years_experience=user.years_experience,
+        linkedin_url=user.linkedin_url,
+        portfolio_url=user.portfolio_url,
+        professional_summary=user.professional_summary,
         role_id=user.role_id,
         role_name=role.name
     )
@@ -169,8 +191,30 @@ def update_user_profile(
         user.username = request.username
     if request.email is not None:
         user.email = request.email
+    if request.phone is not None:
+        user.phone = request.phone
+    if request.location is not None:
+        user.location = request.location
+    if request.current_title is not None:
+        user.current_title = request.current_title
+    if request.years_experience is not None:
+        user.years_experience = request.years_experience
+    if request.linkedin_url is not None:
+        user.linkedin_url = str(request.linkedin_url)
+    if request.portfolio_url is not None:
+        user.portfolio_url = str(request.portfolio_url)
+    if request.professional_summary is not None:
+        user.professional_summary = request.professional_summary
         
     session.add(user)
+    log_audit(
+        session=session,
+        user_id=user.id,
+        action="UPDATE_PROFILE",
+        entity_type="User",
+        entity_id=user.id,
+        details="Updated profile fields",
+    )
     session.commit()
     session.refresh(user)
     
@@ -178,6 +222,13 @@ def update_user_profile(
         id=user.id,
         username=user.username,
         email=user.email,
+        phone=user.phone,
+        location=user.location,
+        current_title=user.current_title,
+        years_experience=user.years_experience,
+        linkedin_url=user.linkedin_url,
+        portfolio_url=user.portfolio_url,
+        professional_summary=user.professional_summary,
         role_id=user.role_id,
         role_name=user.role.name if user.role else None
     )

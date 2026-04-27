@@ -312,44 +312,46 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--space-4);
   z-index: var(--z-modal);
   animation: fadeIn 0.15s ease-out;
 }
 
-.apply-modal {
+.job-list-page .apply-modal {
   background: var(--surface-card);
   border: 1px solid var(--surface-border-strong);
   border-radius: var(--radius-2xl);
   padding: var(--space-8);
-  max-width: 480px;
-  width: 90%;
+  width: min(760px, 100%);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
   box-shadow: var(--shadow-xl);
   animation: scaleIn 0.2s ease-out;
 }
 
-.apply-modal h2 {
+.job-list-page .apply-modal h2 {
   color: var(--text-primary);
   margin: 0 0 var(--space-2);
   font-size: var(--font-2xl);
 }
 
-.modal-subtitle {
+.job-list-page .modal-subtitle {
   color: var(--text-secondary);
   margin: 0 0 var(--space-6);
 }
 
-.resume-selection {
+.job-list-page .resume-selection {
   margin-bottom: var(--space-6);
 }
 
-.resume-selection label {
+.job-list-page .resume-selection label {
   display: block;
   color: var(--text-primary);
   font-weight: var(--weight-medium);
   margin-bottom: var(--space-2);
 }
 
-.resume-selection select {
+.job-list-page .resume-selection select {
   width: 100%;
   padding: var(--space-3);
   background: var(--surface-bg);
@@ -359,12 +361,12 @@
   font-size: var(--font-md);
 }
 
-.resume-selection select option {
+.job-list-page .resume-selection select option {
   background: var(--surface-card);
   color: var(--text-primary);
 }
 
-.no-resume-warning {
+.job-list-page .no-resume-warning {
   background: var(--warning-bg);
   border: 1px solid var(--warning-border);
   border-radius: var(--radius-lg);
@@ -374,18 +376,18 @@
   margin-bottom: var(--space-6);
 }
 
-.no-resume-warning svg {
+.job-list-page .no-resume-warning svg {
   width: 24px;
   height: 24px;
   margin-bottom: var(--space-2);
 }
 
-.no-resume-warning p {
+.job-list-page .no-resume-warning p {
   margin: 0 0 var(--space-3);
   font-size: var(--font-base);
 }
 
-.upload-resume-link {
+.job-list-page .upload-resume-link {
   background: transparent;
   border: 1px solid var(--warning-border);
   color: var(--warning-400);
@@ -396,7 +398,7 @@
   transition: all var(--transition-fast);
 }
 
-.upload-resume-link:hover {
+.job-list-page .upload-resume-link:hover {
   background: var(--warning-bg);
 }
 
@@ -432,6 +434,83 @@
   cursor: not-allowed;
 }
 
+.job-list-page .quiz-section {
+  margin-bottom: var(--space-5);
+  border-top: 1px solid var(--surface-border);
+  padding-top: var(--space-4);
+}
+
+.job-list-page .quiz-header h3 {
+  margin: 0 0 var(--space-1);
+  color: var(--text-primary);
+  font-size: var(--font-lg);
+}
+
+.job-list-page .quiz-header p {
+  margin: 0 0 var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+}
+
+.job-list-page .quiz-loading {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+.job-list-page .quiz-error {
+  margin: var(--space-2) 0 0;
+  color: var(--error-400);
+  font-size: var(--font-sm);
+}
+
+.job-list-page .quiz-question {
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  background: var(--surface-bg);
+}
+
+.job-list-page .quiz-question-title {
+  margin: 0 0 var(--space-2);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.job-list-page .quiz-options {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.job-list-page .quiz-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+.job-list-page .quiz-option input {
+  margin-top: 3px;
+}
+
+.job-list-page .quiz-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.job-list-page .quiz-meta span {
+  border: 1px solid var(--surface-border-strong);
+  border-radius: var(--radius-full);
+  padding: 2px var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--font-2xs);
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .job-list-page .page-header {
@@ -441,5 +520,24 @@
 
   .job-grid {
     grid-template-columns: 1fr;
+  }
+
+  .job-list-page .modal-overlay {
+    padding: var(--space-2);
+  }
+
+  .job-list-page .apply-modal {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .job-list-page .modal-actions {
+    flex-direction: column;
+  }
+
+  .job-list-page .modal-actions .cancel-btn,
+  .job-list-page .modal-actions .submit-btn {
+    width: 100%;
   }
 }

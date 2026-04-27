@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { uploadDocument, getDocuments, downloadDocument, deleteDocument } from "../services/api";
-import { FolderOpen, IdCard, FileSignature, FileText } from "lucide-react";
+import { Download, FolderOpen, IdCard, FileSignature, FileText, Trash2, UploadCloud } from "lucide-react";
+import { EmptyState } from "../components/ui";
 import "./DocumentVault.css";
 
 const DocumentVault = () => {
@@ -124,8 +125,9 @@ const DocumentVault = () => {
           <form className="vault-form" onSubmit={handleUpload}>
             
             <div className="form-group">
-              <label>Document Type</label>
+              <label htmlFor="vault-doc-type">Document Type</label>
               <select 
+                id="vault-doc-type"
                 value={docType} 
                 onChange={(e) => setDocType(e.target.value)}
                 className="vault-select"
@@ -139,8 +141,9 @@ const DocumentVault = () => {
             </div>
 
             <div className="form-group">
-              <label>Expiration Date (Optional)</label>
+              <label htmlFor="vault-expiration-date">Expiration Date (Optional)</label>
               <input 
+                id="vault-expiration-date"
                 type="date" 
                 value={expirationDate}
                 onChange={(e) => setExpirationDate(e.target.value)}
@@ -159,9 +162,7 @@ const DocumentVault = () => {
               />
               <label htmlFor="file-upload" className="file-label">
                 <div className="upload-icon">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <UploadCloud size={34} aria-hidden="true" />
                 </div>
                 <span className="file-name">{file ? file.name : "Click to browse or drag file here"}</span>
                 <span className="file-hint">Supported formats: PDF, DOCX, JPG, PNG (Max 5MB)</span>
@@ -183,10 +184,11 @@ const DocumentVault = () => {
           {loading ? (
             <div className="vault-loading">Loading documents...</div>
           ) : documents.length === 0 ? (
-            <div className="vault-empty">
-              <div className="empty-icon"><FolderOpen size={48} /></div>
-              <p>Your vault is currently empty.</p>
-            </div>
+            <EmptyState
+              icon={FolderOpen}
+              title="No documents uploaded"
+              description="Upload resume, ID, contract, and certification files to keep your 201 records organized."
+            />
           ) : (
             <div className="document-grid">
               {documents.map((doc) => (
@@ -210,20 +212,16 @@ const DocumentVault = () => {
                     <button 
                       onClick={() => handleDownload(doc.id, doc.original_filename)}
                       className="icon-btn download"
-                      title="Download"
+                      aria-label={`Download ${doc.original_filename}`}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      <Download size={16} aria-hidden="true" />
                     </button>
                     <button 
                       onClick={() => handleDelete(doc.id)}
                       className="icon-btn delete"
-                      title="Delete"
+                      aria-label={`Delete ${doc.original_filename}`}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      <Trash2 size={16} aria-hidden="true" />
                     </button>
                   </div>
                 </div>

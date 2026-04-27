@@ -28,11 +28,25 @@ from models.user import User
 from models.resume import Resume
 from models.job import JobRequisition, JobCriteria, JobKeyword, JobStatus
 from models.application import Application, ApplicationStatus
+from models.quiz import ApplicationQuizResult, QuizOutcome
 from models.talent_pool import TalentPoolEntry, TalentPoolStatus
+from models.deployment_contract_alert import (
+    DeploymentContractAlert,
+    ContractAlertStage,
+    ContractAlertEmailStatus,
+)
+from models.application_message import ApplicationMessageThread, ApplicationMessage
+from models.application_interview import ApplicationInterview, InterviewMode, InterviewStatus
+from models.notification import AppNotification, NotificationType
 
 # Export all models for easy importing
 __all__ = [
     "Permission", "RolePermissionLink", "Role", "User", "Resume",
     "JobRequisition", "JobCriteria", "JobKeyword", "JobStatus",
-    "Application", "ApplicationStatus", "TalentPoolEntry", "TalentPoolStatus"
+    "Application", "ApplicationStatus", "ApplicationQuizResult", "QuizOutcome",
+    "TalentPoolEntry", "TalentPoolStatus",
+    "DeploymentContractAlert", "ContractAlertStage", "ContractAlertEmailStatus",
+    "ApplicationMessageThread", "ApplicationMessage",
+    "ApplicationInterview", "InterviewMode", "InterviewStatus",
+    "AppNotification", "NotificationType",
 ]

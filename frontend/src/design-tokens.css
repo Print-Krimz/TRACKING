@@ -25,21 +25,25 @@
   /* ===================================================
      SURFACE / BACKGROUNDS
      =================================================== */
-  --surface-bg:       #0b1121;
-  --surface-card:     #111827;
-  --surface-raised:   #1e293b;
-  --surface-hover:    #1f2937;
-  --surface-border:   rgba(148, 163, 184, 0.08);
-  --surface-border-strong: rgba(148, 163, 184, 0.15);
-  --surface-overlay:  rgba(11, 17, 33, 0.80);
+  --surface-bg:       #090d16;
+  --surface-shell:    #0d1420;
+  --surface-sidebar:  #101826;
+  --surface-card:     #121b29;
+  --surface-card-subtle: #0f1724;
+  --surface-raised:   #1a2535;
+  --surface-hover:    #202c3c;
+  --surface-selected: rgba(59, 130, 246, 0.12);
+  --surface-border:   rgba(148, 163, 184, 0.11);
+  --surface-border-strong: rgba(148, 163, 184, 0.22);
+  --surface-overlay:  rgba(9, 13, 22, 0.84);
 
   /* ===================================================
      TEXT
      =================================================== */
-  --text-primary:   #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted:     #64748b;
-  --text-disabled:  #475569;
+  --text-primary:   #f8fafc;
+  --text-secondary: #b6c4d6;
+  --text-muted:     #7d8da3;
+  --text-disabled:  #59677a;
   --text-inverse:   #0f172a;
   --text-brand:     #60a5fa;
 
@@ -83,12 +87,23 @@
   --accent-rose-bg:   rgba(244, 63, 94, 0.12);
   --accent-sky:       #0ea5e9;
   --accent-sky-bg:    rgba(14, 165, 233, 0.12);
+  --accent-color:      var(--brand-500);
+
+  /* ===================================================
+     ROLE + WORKFLOW COLORS
+     =================================================== */
+  --role-applicant: #20c997;
+  --role-recruiter: #4f8cff;
+  --role-admin: #9b7cff;
+  --workflow-ai: #8b5cf6;
+  --workflow-deployment: #14b8a6;
 
   /* ===================================================
      TYPOGRAPHY
      =================================================== */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+  --font-family: 'Aptos', 'Segoe UI', -apple-system, BlinkMacSystemFont,
     Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-display: 'Aptos Display', 'Segoe UI', var(--font-family);
 
   --font-2xs:  0.6875rem;  /* 11px */
   --font-xs:   0.75rem;    /* 12px */
@@ -153,6 +168,8 @@
   --shadow-xl:  0 16px 48px rgba(0, 0, 0, 0.35);
   --shadow-glow-brand: 0 0 20px rgba(59, 130, 246, 0.15);
   --shadow-glow-success: 0 0 20px rgba(16, 185, 129, 0.15);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.025), 0 16px 42px rgba(0, 0, 0, 0.18);
+  --shadow-popover: 0 24px 70px rgba(0, 0, 0, 0.36);
 
   /* ===================================================
      TRANSITIONS
@@ -176,17 +193,37 @@
      LAYOUT
      =================================================== */
   --sidebar-width:           240px;
-  --sidebar-collapsed-width: 68px;
+  --sidebar-collapsed-width: 72px;
   --header-height:           60px;
-  --content-max-width:       1280px;
+  --content-max-width:       1232px;
+  --content-wide-width:      1440px;
+  --page-gutter:             clamp(1rem, 3vw, 2.25rem);
+  --page-top-space:          clamp(1.5rem, 3.2vw, 2.75rem);
+  --control-height-sm:       34px;
+  --control-height:          42px;
+  --control-height-lg:       48px;
+  --button-padding-sm:        0 var(--space-3);
+  --button-padding:           0 var(--space-4);
+  --button-padding-lg:        0 var(--space-5);
+  --form-panel-width:         760px;
+  --form-wide-width:          920px;
+  --table-header-bg:         #202b3a;
+  --table-row-bg:            rgba(18, 27, 41, 0.78);
+  --table-row-hover:         rgba(32, 44, 60, 0.72);
+  --focus-ring:              0 0 0 3px rgba(59, 130, 246, 0.28);
+  --focus-ring-error:        0 0 0 3px rgba(239, 68, 68, 0.22);
 }
 
 :root[data-theme="light"] {
   /* SURFACE / BACKGROUNDS */
   --surface-bg:       #f8fafc;
+  --surface-shell:    #eef2f7;
+  --surface-sidebar:  #ffffff;
   --surface-card:     #ffffff;
+  --surface-card-subtle: #f8fafc;
   --surface-raised:   #f1f5f9;
   --surface-hover:    #e2e8f0;
+  --surface-selected: rgba(37, 99, 235, 0.10);
   --surface-border:   rgba(15, 23, 42, 0.08);
   --surface-border-strong: rgba(15, 23, 42, 0.15);
   --surface-overlay:  rgba(255, 255, 255, 0.85);
@@ -203,4 +240,9 @@
   --warning-bg:  rgba(245, 158, 11, 0.15);
   --error-bg:  rgba(239, 68, 68, 0.15);
   --info-bg:  rgba(6, 182, 212, 0.15);
+  --table-header-bg: #e8eef7;
+  --table-row-bg: rgba(255, 255, 255, 0.86);
+  --table-row-hover: rgba(226, 232, 240, 0.72);
+  --shadow-card: 0 1px 0 rgba(15, 23, 42, 0.04), 0 16px 36px rgba(15, 23, 42, 0.08);
+  --shadow-popover: 0 24px 70px rgba(15, 23, 42, 0.18);
 }

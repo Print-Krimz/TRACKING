@@ -129,6 +129,21 @@
   font-weight: var(--weight-bold);
 }
 
+.drawer-score-box.quiz {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.24);
+}
+
+.drawer-score-box.quiz .drawer-score-label {
+  color: var(--info-400, #38bdf8);
+}
+
+.drawer-quiz-outcome {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
 .drawer-status-box {
   flex: 2;
   display: flex;

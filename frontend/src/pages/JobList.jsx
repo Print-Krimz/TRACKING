@@ -10,7 +10,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getJobs, getResumes, applyToJob } from "../services/api";
+import { getJobs, getResumes, applyToJob, getJobQuiz } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import "./JobList.css";
@@ -29,6 +29,10 @@ const JobList = () => {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [selectedResume, setSelectedResume] = useState(null);
+  const [quizData, setQuizData] = useState(null);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizError, setQuizError] = useState("");
   const [applying, setApplying] = useState(false);
 
   // Pagination State
@@ -67,19 +71,68 @@ const JobList = () => {
       (job.location || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const handleApplyClick = (job) => {
+  const handleApplyClick = async (job) => {
     setSelectedJob(job);
-    setSelectedResume(resumes.length > 0 ? resumes[0].id : null);
+    setQuizData(null);
+    setQuizAnswers({});
+    setQuizError("");
+    setQuizLoading(true);
+    try {
+      const [resumeData, quizPayload] = await Promise.all([
+        getResumes().catch(() => ({ resumes: [] })),
+        getJobQuiz(job.id),
+      ]);
+      setResumes(resumeData.resumes || []);
+      setSelectedResume(
+        resumeData.resumes?.length > 0 ? resumeData.resumes[0].id : null,
+      );
+      setQuizData(quizPayload);
+    } catch (err) {
+      setQuizError(
+        err.response?.data?.detail || "Failed to load quiz for this role.",
+      );
+    } finally {
+      setQuizLoading(false);
+    }
     setShowApplyModal(true);
   };
 
   const handleApply = async () => {
     if (!selectedJob) return;
+    if (!quizData?.questions?.length) {
+      toast.error("Quiz is required before applying.");
+      return;
+    }
+
+    const unanswered = quizData.questions.filter(
+      (question) => quizAnswers[question.question_id] == null,
+    );
+    if (unanswered.length > 0) {
+      toast.error("Please answer all quiz questions before submitting.");
+      return;
+    }
+
+    const quizPayload = quizData.questions.map((question) => ({
+      question_id: question.question_id,
+      selected_option: quizAnswers[question.question_id],
+    }));
 
     setApplying(true);
     try {
-      await applyToJob(selectedJob.id, selectedResume);
-      toast.success(`Successfully applied to ${selectedJob.title}!`);
+      const created = await applyToJob(
+        selectedJob.id,
+        selectedResume,
+        quizPayload,
+      );
+      const outcome = created?.quiz_result?.outcome?.replaceAll("_", " ");
+      const score = created?.quiz_result?.score_percent;
+      if (score != null && outcome) {
+        toast.success(
+          `Applied to ${selectedJob.title}. Quiz: ${score}% (${outcome}).`,
+        );
+      } else {
+        toast.success(`Successfully applied to ${selectedJob.title}!`);
+      }
       setShowApplyModal(false);
     } catch (err) {
       toast.error(err.response?.data?.detail || "Failed to apply");
@@ -322,6 +375,59 @@ const JobList = () => {
               </div>
             )}
 
+            <div className="quiz-section">
+              <div className="quiz-header">
+                <h3>Role Quiz Assessment</h3>
+                {quizData && (
+                  <p>
+                    Passing score: {quizData.pass_score_percent}% (Must-have:
+                    {" "}
+                    {quizData.must_have_pass_percent}%)
+                  </p>
+                )}
+              </div>
+
+              {quizLoading && <p className="quiz-loading">Loading quiz...</p>}
+              {quizError && <p className="quiz-error">{quizError}</p>}
+
+              {!quizLoading &&
+                !quizError &&
+                quizData?.questions?.map((question, index) => (
+                  <div key={question.question_id} className="quiz-question">
+                    <p className="quiz-question-title">
+                      {index + 1}. {question.question_text}
+                    </p>
+                    <div className="quiz-options">
+                      {question.options.map((option, optionIndex) => (
+                        <label key={optionIndex} className="quiz-option">
+                          <input
+                            type="radio"
+                            name={question.question_id}
+                            checked={
+                              quizAnswers[question.question_id] === optionIndex
+                            }
+                            onChange={() =>
+                              setQuizAnswers((prev) => ({
+                                ...prev,
+                                [question.question_id]: optionIndex,
+                              }))
+                            }
+                          />
+                          <span>{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="quiz-meta">
+                      <span>{question.skill_name}</span>
+                      <span>{question.difficulty}</span>
+                      <span>
+                        {question.is_must_have ? "Must-have" : "Nice-to-have"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
             <div className="modal-actions">
               <button
                 className="cancel-btn"
@@ -333,9 +439,15 @@ const JobList = () => {
               <button
                 className="submit-btn"
                 onClick={handleApply}
-                disabled={applying}
+                disabled={applying || quizLoading || !!quizError}
               >
-                {applying ? "Applying..." : "Submit Application"}
+                {applying
+                  ? "Applying..."
+                  : `Submit Application${
+                      quizData?.questions?.length
+                        ? ` (${quizData.questions.length}Q Quiz)`
+                        : ""
+                    }`}
               </button>
             </div>
           </div>

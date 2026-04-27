@@ -372,6 +372,24 @@
   font-weight: var(--weight-medium);
 }
 
+.all-applicants-page .quiz-badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: var(--weight-semibold);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: var(--info-400, #38bdf8);
+  background: rgba(56, 189, 248, 0.12);
+  width: fit-content;
+}
+
+.all-applicants-page .quiz-label {
+  font-size: var(--font-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+}
+
 .all-applicants-page .no-score {
   color: var(--text-disabled);
   font-size: var(--font-sm);

@@ -411,6 +411,18 @@
   border: 1px solid var(--error-border);
 }
 
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-hint {
+  color: var(--warning-500);
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+}
+
 /* Date */
 .date-cell {
   color: var(--text-secondary);

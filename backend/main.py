@@ -22,23 +22,67 @@ API Documentation:
     - ReDoc: http://localhost:8000/redoc
 """
 
+import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
-from database import create_db_and_tables, ensure_application_status_enum_values, engine
+from database import (
+    create_db_and_tables,
+    ensure_application_status_enum_values,
+    ensure_deployment_contract_alert_schema,
+    ensure_user_profile_fields,
+    engine,
+)
 from routes import (
     auth_router, user_router, roles_router, resume_router, job_router, 
     application_router, analytics_router, matching_router, document_router,
-    client_router, deployment_router, admin_router, talent_pool_router
+    client_router, deployment_router, admin_router, talent_pool_router,
+    interview_router, messaging_router, notification_router
 )
 from models.permission import Permission, RolePermissionLink
 from models.role import Role
 from models.job import JobRequisition, JobStatus
 from models.client import Client
 from models.deployment import Deployment
+from models.deployment_contract_alert import DeploymentContractAlert
+from models.application_message import ApplicationMessage, ApplicationMessageThread
+from models.application_interview import ApplicationInterview
+from models.notification import AppNotification
 from models.audit_log import AuditLog
+from services.deployment_contract_alert_service import run_contract_expiration_alert_job
+
+
+async def _contract_alert_scheduler() -> None:
+    """
+    Run contract alert checks daily at 00:15 UTC.
+    """
+    while True:
+        now_utc = datetime.now(timezone.utc)
+        next_run = now_utc.replace(hour=0, minute=15, second=0, microsecond=0)
+        if next_run <= now_utc:
+            next_run = next_run + timedelta(days=1)
+
+        wait_seconds = (next_run - now_utc).total_seconds()
+        await asyncio.sleep(max(wait_seconds, 1))
+
+        try:
+            result = run_contract_expiration_alert_job()
+            if result.get("ran"):
+                print(
+                    "Contract alert job completed: "
+                    f"created_alerts={result.get('created_alerts', 0)} "
+                    f"auto_terminated={result.get('auto_terminated', 0)}"
+                )
+            else:
+                print(
+                    "Contract alert job skipped: "
+                    f"{result.get('reason', 'unknown_reason')}"
+                )
+        except Exception as exc:
+            print(f"Contract alert job failed: {exc}")
 
 
 def seed_roles_and_permissions(session: Session) -> None:
@@ -204,6 +248,10 @@ async def lifespan(app: FastAPI):
     create_db_and_tables()
     ensure_application_status_enum_values()
     
+    # Ensure deployment contract alert schema upgrades are applied
+    ensure_deployment_contract_alert_schema()
+    ensure_user_profile_fields()
+
     # Seed roles and permissions
     print("Seeding roles and permissions...")
     with Session(engine) as session:
@@ -220,11 +268,29 @@ async def lifespan(app: FastAPI):
             session.commit()
             print(f"Migrated {len(draft_jobs)} DRAFT jobs to OPEN status")
     
+    # Start scheduler and run a startup pass to avoid missing alerts.
+    scheduler_task = asyncio.create_task(_contract_alert_scheduler())
+    try:
+        startup_result = run_contract_expiration_alert_job()
+        if startup_result.get("ran"):
+            print(
+                "Startup contract alert run: "
+                f"created_alerts={startup_result.get('created_alerts', 0)} "
+                f"auto_terminated={startup_result.get('auto_terminated', 0)}"
+            )
+    except Exception as exc:
+        print(f"Startup contract alert run failed: {exc}")
+
     print("Application startup complete!")
-    
+
     yield  # Application runs here
-    
+
     # Shutdown: Cleanup if needed
+    scheduler_task.cancel()
+    try:
+        await scheduler_task
+    except asyncio.CancelledError:
+        pass
     print("Shutting down application...")
 
 
@@ -293,6 +359,9 @@ app.include_router(client_router)         # /clients/* routes
 app.include_router(deployment_router)     # /deployments/* routes
 app.include_router(admin_router)          # /admin/* routes
 app.include_router(talent_pool_router)    # /talent-pool/* routes
+app.include_router(interview_router)      # /interviews/* routes
+app.include_router(messaging_router)      # /messages/* routes
+app.include_router(notification_router)   # /notifications/* routes
 
 
 @app.get("/", tags=["Root"])

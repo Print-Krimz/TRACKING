@@ -33,6 +33,27 @@ from schemas.resume import (
     ResumeAnalysisResponse,
     AnalyzeResumeRequest,
 )
+from schemas.deployment_alert import (
+    DeploymentContractAlertResponse,
+    DeploymentContractAlertListResponse,
+)
+from schemas.messaging import (
+    MessageSendRequest,
+    MarkMessagesReadRequest,
+    MessageResponse,
+    MessageThreadResponse,
+    UnreadCountResponse,
+)
+from schemas.interview import (
+    InterviewCreateRequest,
+    InterviewUpdateRequest,
+    InterviewResponse,
+    InterviewListResponse,
+)
+from schemas.notification import (
+    NotificationResponse,
+    NotificationListResponse,
+)
 
 __all__ = [
     # Auth schemas
@@ -55,4 +76,21 @@ __all__ = [
     "ResumeListResponse",
     "ResumeAnalysisResponse",
     "AnalyzeResumeRequest",
+    # Deployment alert schemas
+    "DeploymentContractAlertResponse",
+    "DeploymentContractAlertListResponse",
+    # Messaging schemas
+    "MessageSendRequest",
+    "MarkMessagesReadRequest",
+    "MessageResponse",
+    "MessageThreadResponse",
+    "UnreadCountResponse",
+    # Interview schemas
+    "InterviewCreateRequest",
+    "InterviewUpdateRequest",
+    "InterviewResponse",
+    "InterviewListResponse",
+    # Notification schemas
+    "NotificationResponse",
+    "NotificationListResponse",
 ]

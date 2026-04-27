@@ -30,6 +30,7 @@ import {
   Clock, 
   AlertTriangle, 
   AlertCircle, 
+  CheckCircle2,
   Lightbulb,
   TrendingUp,
   BarChart3

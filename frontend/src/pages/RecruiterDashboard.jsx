@@ -14,6 +14,7 @@ import {
   getApplications,
   getJobs,
   getSkillDistribution,
+  getUpcomingInterviews,
   updateApplicationStatus,
 } from "../services/api";
 import { Users, FileText, DatabaseZap } from "lucide-react";
@@ -41,6 +42,7 @@ const RecruiterDashboard = () => {
   const [drawerApp, setDrawerApp] = useState(null);
   const [selectedAppIds, setSelectedAppIds] = useState([]);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [upcomingInterviews, setUpcomingInterviews] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -58,10 +60,12 @@ const RecruiterDashboard = () => {
           getJobs(),
           getSkillDistribution(jobIdParam).catch(() => ({ skills: [] })),
         ]);
+      const upcomingData = await getUpcomingInterviews().catch(() => ({ interviews: [] }));
       setOverview(overviewData);
       setApplications(appsData.applications || []);
       setJobs(jobsData.jobs || []);
       setSkillData(skillsData.skills || []);
+      setUpcomingInterviews(upcomingData.interviews || []);
     } catch (err) {
       setError("Failed to load dashboard data");
     } finally {
@@ -319,6 +323,26 @@ const RecruiterDashboard = () => {
             <span className="metric-label">In Interview</span>
           </div>
         </div>
+      </div>
+      <div className="pipeline-section" style={{ marginTop: "20px" }}>
+        <h2>Upcoming Interviews</h2>
+        {upcomingInterviews.length === 0 ? (
+          <p className="pipeline-hint">No upcoming interviews.</p>
+        ) : (
+          <div className="kanban-board">
+            {upcomingInterviews.slice(0, 6).map((interview) => (
+              <div key={interview.id} className="kanban-card">
+                <div className="card-title">Application #{interview.application_id}</div>
+                <div className="card-meta">
+                  {new Date(interview.scheduled_start_at).toLocaleString()}
+                </div>
+                <div className="card-job">
+                  {interview.mode} • {interview.status.replace("_", " ")}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Kanban Pipeline */}

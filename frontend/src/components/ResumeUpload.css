@@ -3,51 +3,53 @@
  */
 
 .resume-submit-page {
-  padding: 2rem;
-  max-width: 900px;
+  padding: var(--space-8);
+  max-width: var(--form-wide-width);
   margin: 0 auto;
 }
 
 /* Page Header */
-.page-header {
-  margin-bottom: 2rem;
+.resume-submit-page .page-header {
+  margin-bottom: var(--space-6);
 }
 
-.page-header h1 {
-  color: #fff;
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem;
+.resume-submit-page .page-header h1 {
+  color: var(--text-primary);
+  font-size: var(--font-3xl);
+  font-weight: var(--weight-bold);
+  margin: 0 0 var(--space-2);
 }
 
-.page-header p {
-  color: #94a3b8;
-  font-size: 1rem;
+.resume-submit-page .page-header p {
+  color: var(--text-secondary);
+  font-size: var(--font-base);
   margin: 0;
 }
 
 /* Mode Toggle */
 .mode-toggle {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  padding: 4px;
-  background: rgba(26, 26, 46, 0.6);
-  border-radius: 12px;
+  gap: var(--space-1);
+  margin-bottom: var(--space-5);
+  padding: var(--space-1);
+  background: var(--surface-card-subtle);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
   width: fit-content;
 }
 
 .mode-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
+  gap: var(--space-2);
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-3);
   background: transparent;
-  border: none;
-  border-radius: 10px;
-  color: #94a3b8;
-  font-size: 0.9rem;
-  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -58,46 +60,48 @@
 }
 
 .mode-btn:hover {
-  color: #fff;
+  color: var(--text-primary);
+  background: rgba(148, 163, 184, 0.075);
 }
 
 .mode-btn.active {
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
+  background: var(--surface-selected);
+  border-color: rgba(59, 130, 246, 0.18);
+  color: var(--brand-300);
 }
 
 /* File Upload Drop Zone */
 .drop-zone {
-  border: 2px dashed rgba(99, 102, 241, 0.3);
-  border-radius: 16px;
-  padding: 3rem 2rem;
+  border: 2px dashed rgba(59, 130, 246, 0.28);
+  border-radius: var(--radius-lg);
+  padding: var(--space-12) var(--space-8);
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: rgba(15, 15, 26, 0.4);
+  background: var(--surface-card-subtle);
 }
 
 .drop-zone:hover {
-  border-color: rgba(99, 102, 241, 0.5);
-  background: rgba(99, 102, 241, 0.05);
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(59, 130, 246, 0.06);
 }
 
 .drop-zone.dragging {
-  border-color: #6366f1;
-  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--brand-500);
+  background: rgba(59, 130, 246, 0.1);
   border-style: solid;
 }
 
 .drop-zone-icon {
   width: 56px;
   height: 56px;
-  background: rgba(99, 102, 241, 0.15);
-  border-radius: 16px;
+  background: var(--surface-selected);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
-  color: #818cf8;
+  color: var(--brand-300);
 }
 
 .drop-zone-icon svg {
@@ -106,19 +110,19 @@
 }
 
 .drop-zone-text {
-  color: #94a3b8;
-  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-size: var(--font-base);
   margin: 0 0 0.5rem;
 }
 
 .drop-zone-primary {
-  color: #818cf8;
-  font-weight: 500;
+  color: var(--brand-300);
+  font-weight: var(--weight-semibold);
 }
 
 .drop-zone-hint {
-  color: #64748b;
-  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-size: var(--font-sm);
   margin: 0;
 }
 
@@ -127,10 +131,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(15, 15, 26, 0.6);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 12px;
-  padding: 1rem;
+  background: var(--surface-card-subtle);
+  border: 1px solid var(--surface-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
 }
 
 .file-info {
@@ -142,12 +146,12 @@
 .file-icon {
   width: 48px;
   height: 48px;
-  background: rgba(99, 102, 241, 0.15);
-  border-radius: 10px;
+  background: var(--surface-selected);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #818cf8;
+  color: var(--brand-300);
 }
 
 .file-icon svg {
@@ -162,23 +166,23 @@
 }
 
 .file-name {
-  color: #fff;
-  font-weight: 500;
-  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+  font-size: var(--font-sm);
 }
 
 .file-size {
-  color: #64748b;
-  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-size: var(--font-xs);
 }
 
 .remove-file-btn {
   width: 36px;
   height: 36px;
-  background: rgba(239, 68, 68, 0.1);
-  border: none;
-  border-radius: 8px;
-  color: #f87171;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-md);
+  color: var(--error-400);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -187,7 +191,7 @@
 }
 
 .remove-file-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.18);
 }
 
 .remove-file-btn svg {
@@ -197,24 +201,24 @@
 
 /* Tips Card */
 .tips-card {
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  background: var(--accent-violet-bg);
+  border: 1px solid rgba(139, 92, 246, 0.24);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .tips-icon {
   width: 48px;
   height: 48px;
-  background: rgba(99, 102, 241, 0.2);
-  border-radius: 12px;
+  background: rgba(139, 92, 246, 0.18);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #818cf8;
+  color: #c4b5fd;
   flex-shrink: 0;
 }
 
@@ -224,18 +228,18 @@
 }
 
 .tips-content h3 {
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 0.75rem;
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  font-weight: var(--weight-semibold);
+  margin: 0 0 var(--space-2);
 }
 
 .tips-content ul {
   margin: 0;
   padding-left: 1.25rem;
-  color: #94a3b8;
-  font-size: 0.9rem;
-  line-height: 1.8;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  line-height: var(--leading-relaxed);
 }
 
 /* Error Banner */
@@ -260,47 +264,48 @@
 
 /* Resume Form */
 .resume-form {
-  background: rgba(26, 26, 46, 0.6);
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  border-radius: 20px;
-  padding: 2rem;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
 }
 
 .resume-form .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-5);
 }
 
 .resume-form label {
   display: block;
-  color: #e2e8f0;
-  font-size: 0.95rem;
-  font-weight: 500;
-  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-2);
 }
 
 .resume-form textarea {
   width: 100%;
   min-height: 400px;
-  background: rgba(15, 15, 26, 0.6);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 12px;
-  padding: 1rem;
-  color: #fff;
-  font-size: 0.95rem;
-  font-family: "Inter", sans-serif;
+  background: var(--surface-card-subtle);
+  border: 1px solid var(--surface-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  font-family: var(--font-family);
   line-height: 1.6;
   resize: vertical;
   transition: all 0.2s ease;
 }
 
 .resume-form textarea::placeholder {
-  color: #64748b;
+  color: var(--text-disabled);
 }
 
 .resume-form textarea:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  border-color: var(--brand-500);
+  box-shadow: var(--focus-ring);
 }
 
 .resume-form textarea:disabled {
@@ -312,58 +317,60 @@
 .char-count {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  font-size: 0.85rem;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--font-xs);
 }
 
 .char-count .valid {
-  color: #34d399;
+  color: var(--success-400);
 }
 
 .char-count .invalid {
-  color: #f87171;
+  color: var(--error-400);
 }
 
 .char-count .min-chars {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* Form Actions */
 .form-actions {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-3);
   justify-content: flex-end;
 }
 
 .cancel-btn {
-  background: rgba(100, 116, 139, 0.2);
-  color: #94a3b8;
-  border: 1px solid rgba(100, 116, 139, 0.3);
-  padding: 0.875rem 1.5rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 500;
+  min-height: var(--control-height);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  border: 1px solid var(--surface-border-strong);
+  padding: var(--button-padding);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-bold);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .cancel-btn:hover:not(:disabled) {
-  background: rgba(100, 116, 139, 0.3);
-  color: #fff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .submit-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  background: linear-gradient(135deg, var(--success-600), var(--success-500));
   color: #fff;
   border: none;
-  padding: 0.875rem 1.5rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: var(--button-padding);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-bold);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -375,7 +382,7 @@
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.22);
 }
 
 .submit-btn:disabled {
@@ -388,7 +395,7 @@
   height: 18px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 
@@ -401,7 +408,7 @@
 /* Responsive */
 @media (max-width: 640px) {
   .resume-submit-page {
-    padding: 1rem;
+    padding: var(--space-5);
   }
 
   .tips-card {
@@ -409,7 +416,7 @@
   }
 
   .resume-form {
-    padding: 1.5rem;
+    padding: var(--space-5);
   }
 
   .form-actions {

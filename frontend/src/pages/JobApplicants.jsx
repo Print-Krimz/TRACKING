@@ -17,6 +17,8 @@ import {
 } from "../services/api";
 import { CheckCircle2, Users, Star, FileText } from "lucide-react";
 import AnonymousName from "../components/AnonymousName";
+import ApplicationMessagesPanel from "../components/ApplicationMessagesPanel";
+import ScheduleInterviewModal from "../components/ScheduleInterviewModal";
 import "./JobApplicants.css";
 
 const STATUS_OPTIONS = [
@@ -37,6 +39,8 @@ const JobApplicants = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [activeMessagesAppId, setActiveMessagesAppId] = useState(null);
+  const [interviewApp, setInterviewApp] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -269,10 +273,33 @@ const JobApplicants = () => {
                 ) : (
                   <span className="no-resume">No resume</span>
                 )}
+                <button
+                  className="action-link"
+                  onClick={() =>
+                    setActiveMessagesAppId((prev) => (prev === app.id ? null : app.id))
+                  }
+                >
+                  {activeMessagesAppId === app.id ? "Hide Messages" : "Messages"}
+                </button>
+                <button className="action-link" onClick={() => setInterviewApp(app)}>
+                  Schedule Interview
+                </button>
               </div>
             </div>
           ))}
         </div>
+      )}
+      {activeMessagesAppId && (
+        <div style={{ marginTop: "16px" }}>
+          <ApplicationMessagesPanel applicationId={activeMessagesAppId} />
+        </div>
+      )}
+      {interviewApp && (
+        <ScheduleInterviewModal
+          application={interviewApp}
+          onClose={() => setInterviewApp(null)}
+          onScheduled={() => setSuccess("Interview scheduled")}
+        />
       )}
     </div>
   );

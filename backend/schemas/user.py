@@ -6,7 +6,7 @@ Used by the user controller for admin operations like listing users and assignin
 """
 
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field
 
 
 class UserBase(BaseModel):
@@ -28,6 +28,13 @@ class UserWithRole(BaseModel):
     id: int
     username: str
     email: str
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    current_title: Optional[str] = None
+    years_experience: Optional[int] = None
+    linkedin_url: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    professional_summary: Optional[str] = None
     role_id: Optional[int] = None
     role_name: Optional[str] = None
     
@@ -66,6 +73,13 @@ class UserUpdateRequest(BaseModel):
     """
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[str] = None
+    phone: Optional[str] = Field(default=None, max_length=30)
+    location: Optional[str] = Field(default=None, max_length=120)
+    current_title: Optional[str] = Field(default=None, max_length=120)
+    years_experience: Optional[int] = Field(default=None, ge=0)
+    linkedin_url: Optional[AnyHttpUrl] = None
+    portfolio_url: Optional[AnyHttpUrl] = None
+    professional_summary: Optional[str] = Field(default=None, max_length=2000)
 
 
 class PasswordChangeRequest(BaseModel):
