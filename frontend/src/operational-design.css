@@ -489,7 +489,7 @@ tbody tr:hover,
     flex-direction: column;
   }
 
-  :is(.job-grid, .resume-grid, .overview-grid, .stats-grid, .metrics-grid, .system-grid) {
+  :is(.job-grid, .resume-grid, .overview-grid, .stats-grid, .metrics-grid, .system-grid, .kanban-board) {
     grid-template-columns: 1fr !important;
   }
 

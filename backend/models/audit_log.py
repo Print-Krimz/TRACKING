@@ -10,13 +10,16 @@ class AuditLog(SQLModel, table=True):
     __tablename__ = "audit_log"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True, description="The user who performed the action")
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True, description="The user who performed the action")
+    actor_type: str = Field(default="user", max_length=20, index=True)
     
     action: str = Field(description="Action performed (e.g., UPLOAD_DOCUMENT, DELETE_DOCUMENT)", max_length=100)
     entity_type: str = Field(description="The entity affected (e.g., Document)", max_length=50)
     entity_id: Optional[int] = Field(default=None, description="The ID of the affected entity")
     
     details: Optional[str] = Field(default=None, sa_column=Column(Text), description="JSON or text details of the action")
+    before_state: Optional[str] = Field(default=None, sa_column=Column(Text), description="Serialized state before the action")
+    after_state: Optional[str] = Field(default=None, sa_column=Column(Text), description="Serialized state after the action")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     user: Optional["User"] = Relationship(back_populates="audit_logs")

@@ -13,7 +13,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createJob } from "../services/api";
+import { assistJobDraft, createJob } from "../services/api";
 import "./JobCreate.css";
 
 const EMPLOYMENT_TYPES = [
@@ -58,6 +58,7 @@ const JobCreate = () => {
 
   // UI state
   const [loading, setLoading] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Validation
@@ -107,6 +108,41 @@ const JobCreate = () => {
    */
   const handleRemoveCriteria = (index) => {
     setCriteria((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleGenerateDraft = async () => {
+    setError("");
+    setDraftLoading(true);
+    try {
+      const draft = await assistJobDraft({
+        title: formData.title,
+        description_text: formData.description,
+        target_role: formData.department || formData.title,
+      });
+      const confirmed = window.confirm(
+        "Apply the generated draft to this form?",
+      );
+      if (!confirmed) return;
+
+      setFormData((prev) => ({
+        ...prev,
+        title: draft.title || prev.title,
+        description: draft.description || prev.description,
+        department: draft.department || prev.department,
+        location: draft.location || prev.location,
+        employment_type: draft.employment_type || prev.employment_type,
+        experience_years: draft.experience_years ?? prev.experience_years,
+        education_level: draft.education_level || prev.education_level,
+        salary_min: draft.salary_min ?? prev.salary_min,
+        salary_max: draft.salary_max ?? prev.salary_max,
+        salary_currency: draft.salary_currency || prev.salary_currency,
+      }));
+      setCriteria(draft.criteria || []);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to generate a draft.");
+    } finally {
+      setDraftLoading(false);
+    }
   };
 
   /**
@@ -165,6 +201,15 @@ const JobCreate = () => {
       <div className="page-header">
         <h1>Create Job Requisition</h1>
         <p>Post a new open position for candidates to apply to</p>
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={handleGenerateDraft}
+          disabled={draftLoading}
+          style={{ marginTop: "12px" }}
+        >
+          {draftLoading ? "Generating..." : "Generate Draft"}
+        </button>
       </div>
 
       {/* Error Display */}

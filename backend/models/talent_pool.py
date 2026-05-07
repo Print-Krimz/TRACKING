@@ -61,6 +61,11 @@ class TalentPoolEntry(SQLModel, table=True):
         sa_column=Column(Text),
         description="JSON array of recent rematch results",
     )
+    rescan_state_json: Optional[str] = Field(
+        default=None,
+        sa_column=Column(Text),
+        description="JSON map of trigger_type -> last rescanned timestamp",
+    )
 
     pooled_at: datetime = Field(default_factory=datetime.utcnow)
     last_rescanned_at: Optional[datetime] = Field(default=None)

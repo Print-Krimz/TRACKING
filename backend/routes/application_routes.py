@@ -27,6 +27,10 @@ from models.resume import Resume
 from models.talent_pool import TalentPoolEntry
 from models.user import User
 from models.notification import NotificationType
+from schemas.automation import (
+    BulkApplicationActionRequest,
+    BulkApplicationActionResponse,
+)
 from schemas.application import (
     ApplicationCreateRequest,
     ApplicationListResponse,
@@ -50,6 +54,8 @@ from schemas.messaging import (
     MessageThreadResponse,
 )
 from services.audit_service import log_audit
+from services.automation_flags import is_automation_enabled
+from services.automation_job_service import enqueue_automation_job
 from services.notification_service import create_notification
 from services.talent_pool_service import save_application_to_talent_pool
 
@@ -506,6 +512,73 @@ router = APIRouter(
     tags=["Applications"],
     responses={401: {"description": "Not authenticated"}},
 )
+
+
+@router.patch(
+    "/bulk-status",
+    response_model=BulkApplicationActionResponse,
+    summary="Bulk update application status",
+    description="Apply one status update to many applications with partial success reporting.",
+)
+def bulk_update_application_status(
+    request: BulkApplicationActionRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("manage_applications")),
+):
+    if not is_automation_enabled("bulk_pipeline_actions"):
+        raise HTTPException(status_code=503, detail="Bulk pipeline actions are disabled.")
+    if not request.application_ids:
+        raise HTTPException(status_code=400, detail="application_ids cannot be empty.")
+    if request.status is None:
+        raise HTTPException(status_code=400, detail="status is required.")
+
+    job = enqueue_automation_job(
+        session=session,
+        job_type="bulk_pipeline_status",
+        payload=request.model_dump(mode="json"),
+        actor_user_id=current_user.id,
+        idempotency_key=json.dumps(request.model_dump(mode="json"), sort_keys=True),
+    )
+    if not job.result_json:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=job.error_message or "Bulk status update failed.",
+        )
+    return BulkApplicationActionResponse(**json.loads(job.result_json or "{}"))
+
+
+@router.patch(
+    "/bulk-shortlist",
+    response_model=BulkApplicationActionResponse,
+    summary="Bulk update shortlist state",
+    description="Shortlist or unshortlist a filtered set of applications.",
+)
+def bulk_update_shortlist(
+    request: BulkApplicationActionRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("manage_applications")),
+):
+    if not is_automation_enabled("bulk_pipeline_actions"):
+        raise HTTPException(status_code=503, detail="Bulk pipeline actions are disabled.")
+    if not request.application_ids:
+        raise HTTPException(status_code=400, detail="application_ids cannot be empty.")
+
+    if request.shortlisted is None:
+        request.shortlisted = True
+
+    job = enqueue_automation_job(
+        session=session,
+        job_type="bulk_pipeline_shortlist",
+        payload=request.model_dump(mode="json"),
+        actor_user_id=current_user.id,
+        idempotency_key=json.dumps(request.model_dump(mode="json"), sort_keys=True),
+    )
+    if not job.result_json:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=job.error_message or "Bulk shortlist update failed.",
+        )
+    return BulkApplicationActionResponse(**json.loads(job.result_json or "{}"))
 
 
 def _slug(text: str) -> str:

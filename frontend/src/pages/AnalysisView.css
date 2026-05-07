@@ -237,11 +237,14 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-6);
+  height: calc(100vh - 300px); /* Restrict grid to viewport to prevent whole-page scrolling */
+  min-height: 600px;
 }
 
 @media (max-width: 1024px) {
   .content-grid {
     grid-template-columns: 1fr;
+    height: auto; /* Allow natural stacking on mobile */
   }
 }
 
@@ -250,6 +253,9 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevents inner content from breaking the viewport bound */
 }
 
 .content-section h2 {
@@ -311,7 +317,7 @@
   background: var(--surface-bg);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
-  max-height: 600px;
+  flex: 1;
   overflow-y: auto;
 }
 
@@ -462,6 +468,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  flex: 1;
+  overflow-y: auto;
+  padding-right: var(--space-2); /* Extra space for the scrollbar */
 }
 
 /* Score Section */
@@ -613,9 +622,5 @@
 
   .meta-info {
     gap: var(--space-4);
-  }
-
-  .resume-content-box {
-    max-height: 400px;
   }
 }

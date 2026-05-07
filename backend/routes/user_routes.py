@@ -11,18 +11,32 @@ Protected Routes (authentication required):
 - GET /roles - List all roles (authenticated users)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session
 
 from database import get_session
 from dependencies import get_current_user, check_permissions
 from models.user import User
-from schemas.user import UserListResponse, UserWithRole, AssignRoleRequest, RoleResponse, UserUpdateRequest, PasswordChangeRequest
+from schemas.user import (
+    ArchiveUserRequest,
+    AssignRoleRequest,
+    PasswordChangeRequest,
+    RestoreUserRequest,
+    RoleResponse,
+    UserListResponse,
+    UserUpdateRequest,
+    UserWithRole,
+)
 from models.controllers.user_controller import (
+    archive_user,
+    delete_user,
     get_all_users,
     get_user_by_id,
     assign_role_to_user,
     get_all_roles,
+    restore_user,
     update_user_profile,
     change_user_password
 )
@@ -51,6 +65,8 @@ router = APIRouter(
     """
 )
 def list_users(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    include_archived: bool = Query(default=True),
     session: Session = Depends(get_session),
     current_user: User = Depends(check_permissions("manage_users"))
 ):
@@ -67,7 +83,11 @@ def list_users(
     Returns:
         UserListResponse: List of all users with role info
     """
-    return get_all_users(session)
+    return get_all_users(
+        session=session,
+        status=status_filter,
+        include_archived=include_archived,
+    )
 
 
 @router.get(
@@ -83,6 +103,7 @@ def list_users(
     """
 )
 def get_current_user_info(
+    session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -96,20 +117,13 @@ def get_current_user_info(
     Returns:
         UserWithRole: Current user's information
     """
-    return UserWithRole(
-        id=current_user.id,
-        username=current_user.username,
-        email=current_user.email,
-        phone=current_user.phone,
-        location=current_user.location,
-        current_title=current_user.current_title,
-        years_experience=current_user.years_experience,
-        linkedin_url=current_user.linkedin_url,
-        portfolio_url=current_user.portfolio_url,
-        professional_summary=current_user.professional_summary,
-        role_id=current_user.role_id,
-        role_name=current_user.role.name if current_user.role else None
-    )
+    response = get_user_by_id(session, current_user.id)
+    if not response:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return response
 
 
 @router.put(
@@ -236,6 +250,99 @@ def update_user_role(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
+        )
+
+
+@router.patch(
+    "/{user_id}/archive",
+    response_model=UserWithRole,
+    summary="Archive user",
+    description="Archive a user account and revoke all module access."
+)
+def archive_user_account(
+    user_id: int,
+    request: ArchiveUserRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("manage_users")),
+):
+    try:
+        return archive_user(
+            session=session,
+            target_user_id=user_id,
+            actor_user=current_user,
+            request=request,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
+
+
+@router.patch(
+    "/{user_id}/restore",
+    response_model=UserWithRole,
+    summary="Restore archived user",
+    description="Restore an archived user account to active status."
+)
+def restore_user_account(
+    user_id: int,
+    request: RestoreUserRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("manage_users")),
+):
+    try:
+        return restore_user(
+            session=session,
+            target_user_id=user_id,
+            actor_user=current_user,
+            request=request,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.delete(
+    "/{user_id}",
+    summary="Delete user permanently",
+    description="Permanently delete user when no dependent records exist."
+)
+def delete_user_account(
+    user_id: int,
+    confirm: bool = False,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("manage_users")),
+):
+    if not confirm:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Hard delete requires confirm=true.",
+        )
+
+    try:
+        delete_user(
+            session=session,
+            target_user_id=user_id,
+            actor_user=current_user,
+        )
+        return {"message": "User deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
         )
 
 

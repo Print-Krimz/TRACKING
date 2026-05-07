@@ -5,7 +5,8 @@ Pydantic schemas for user management operations.
 Used by the user controller for admin operations like listing users and assigning roles.
 """
 
-from typing import List, Optional
+from datetime import datetime
+from typing import Dict, List, Optional
 from pydantic import AnyHttpUrl, BaseModel, Field
 
 
@@ -37,6 +38,11 @@ class UserWithRole(BaseModel):
     professional_summary: Optional[str] = None
     role_id: Optional[int] = None
     role_name: Optional[str] = None
+    status: str = "active"
+    archived_at: Optional[datetime] = None
+    archived_by_user_id: Optional[int] = None
+    archive_reason: Optional[str] = None
+    effective_modules: Dict[str, bool] = Field(default_factory=dict)
     
     class Config:
         from_attributes = True
@@ -65,6 +71,14 @@ class AssignRoleRequest(BaseModel):
     role_name: str = Field(
         description="Name of the role to assign (e.g., 'Admin', 'Recruiter', 'Applicant')"
     )
+
+
+class ArchiveUserRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+
+
+class RestoreUserRequest(BaseModel):
+    reason: Optional[str] = Field(default=None, max_length=500)
 
 
 class UserUpdateRequest(BaseModel):

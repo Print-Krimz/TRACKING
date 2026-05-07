@@ -12,6 +12,7 @@ Protected Routes:
 - POST /jobs/{id}/extract-keywords - AI keyword extraction (Recruiter/Admin)
 """
 
+import json
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session
@@ -20,6 +21,7 @@ from database import get_session
 from dependencies import get_current_user, check_permissions
 from models.user import User
 from models.job import JobStatus
+from schemas.automation import JobDraftAssistRequest, JobDraftAssistResponse
 from schemas.job import (
     JobCreateRequest,
     JobUpdateRequest,
@@ -36,6 +38,8 @@ from models.controllers.job_controller import (
     delete_job,
     extract_keywords
 )
+from services.automation_flags import is_automation_enabled
+from services.automation_job_service import enqueue_automation_job
 
 
 router = APIRouter(
@@ -43,6 +47,38 @@ router = APIRouter(
     tags=["Jobs"],
     responses={401: {"description": "Not authenticated"}}
 )
+
+
+@router.post(
+    "/assist/draft",
+    response_model=JobDraftAssistResponse,
+    summary="Generate normalized job draft",
+    description="Normalize partial job input into a draft recruiters can review before saving.",
+)
+def assist_job_draft(
+    request: JobDraftAssistRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("manage_jobs")),
+):
+    if not is_automation_enabled("job_autofill"):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Job autofill is temporarily disabled.",
+        )
+
+    job = enqueue_automation_job(
+        session=session,
+        job_type="job_autofill",
+        payload=request.model_dump(mode="json"),
+        actor_user_id=current_user.id,
+        idempotency_key=json.dumps(request.model_dump(mode="json"), sort_keys=True),
+    )
+    if not job.result_json:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=job.error_message or "Failed to generate a job draft.",
+        )
+    return JobDraftAssistResponse(**json.loads(job.result_json or "{}"))
 
 
 @router.post(

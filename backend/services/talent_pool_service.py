@@ -6,7 +6,7 @@ against open roles.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Iterable, List, Optional, Tuple
 
 from sqlmodel import Session, select
@@ -17,10 +17,24 @@ from models.resume import Resume
 from models.talent_pool import TalentPoolEntry, TalentPoolStatus
 from models.user import User
 from schemas.talent_pool import TalentPoolEntryResponse
+from services.automation_flags import is_automation_enabled
 from services.matching_service import calculate_match_score
 
 
 TALENT_POOL_MATCH_THRESHOLD = 60
+TALENT_POOL_RESCAN_COOLDOWN_HOURS = 24
+
+
+class TalentPoolValidationError(ValueError):
+    """Raised when a talent pool action fails domain validation."""
+
+    def __init__(self, message: str, status_code: int = 400):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def _latest_resume_for_candidate(session: Session, candidate_id: int) -> Optional[Resume]:
@@ -64,6 +78,75 @@ def _get_entry_job_matches(
 
     ranked_matches.sort(key=lambda item: item["match_score"], reverse=True)
     return ranked_matches
+
+
+def validate_open_target_job(
+    session: Session,
+    target_job_id: Optional[int],
+) -> Optional[JobRequisition]:
+    """Ensure target job exists and is open before scoped rescans run."""
+    if target_job_id is None:
+        return None
+
+    target_job = session.get(JobRequisition, target_job_id)
+    if not target_job:
+        raise TalentPoolValidationError("Target job not found", status_code=404)
+
+    if target_job.status != JobStatus.OPEN:
+        raise TalentPoolValidationError(
+            "Target job must be open to run scoped rescans",
+            status_code=400,
+        )
+
+    return target_job
+
+
+def _load_rescan_state(entry: TalentPoolEntry) -> dict[str, str]:
+    if not entry.rescan_state_json:
+        return {}
+    try:
+        data = json.loads(entry.rescan_state_json)
+        return data if isinstance(data, dict) else {}
+    except (TypeError, json.JSONDecodeError):
+        return {}
+
+
+def _store_rescan_state(entry: TalentPoolEntry, trigger_type: str, when: datetime) -> None:
+    state = _load_rescan_state(entry)
+    state[trigger_type] = when.isoformat()
+    entry.rescan_state_json = json.dumps(state)
+
+
+def _rescan_delta(before: Optional[dict], after: Optional[dict], trigger_type: str) -> dict:
+    before = before or {}
+    after = after or {}
+    return {
+        "old_score": before.get("best_match_score"),
+        "new_score": after.get("best_match_score"),
+        "matched_jobs_delta": int(after.get("matched_open_jobs_count", 0))
+        - int(before.get("matched_open_jobs_count", 0)),
+        "trigger_type": trigger_type,
+    }
+
+
+def _cooldown_remaining(
+    entry: TalentPoolEntry,
+    trigger_type: str,
+    cooldown_hours: int = TALENT_POOL_RESCAN_COOLDOWN_HOURS,
+) -> Optional[int]:
+    state = _load_rescan_state(entry)
+    last_ran_at = state.get(trigger_type)
+    if not last_ran_at:
+        return None
+    try:
+        last_ran = datetime.fromisoformat(last_ran_at)
+    except ValueError:
+        return None
+    elapsed = _utcnow() - last_ran
+    if elapsed >= timedelta(hours=cooldown_hours):
+        return None
+    remaining = timedelta(hours=cooldown_hours) - elapsed
+    return max(1, int(remaining.total_seconds() // 3600) or 1)
 
 
 def _build_entry_response(session: Session, entry: TalentPoolEntry) -> TalentPoolEntryResponse:
@@ -155,8 +238,6 @@ def list_talent_pool_entries(
     page: int = 1,
     limit: int = 50,
 ) -> Tuple[List[TalentPoolEntryResponse], int, int]:
-    sync_rejected_applications_into_pool(session)
-
     entries = session.exec(
         select(TalentPoolEntry).order_by(TalentPoolEntry.pooled_at.desc())
     ).all()
@@ -222,10 +303,36 @@ def rescan_talent_pool_entry(
     session: Session,
     entry: TalentPoolEntry,
     target_job_id: Optional[int] = None,
-) -> TalentPoolEntryResponse:
+    trigger_type: str = "manual",
+    cooldown_hours: int = TALENT_POOL_RESCAN_COOLDOWN_HOURS,
+) -> dict:
+    validate_open_target_job(session, target_job_id)
+    if _cooldown_remaining(entry, trigger_type, cooldown_hours=cooldown_hours) is not None:
+        entry_response = _build_entry_response(session, entry)
+        return {
+            "entry": entry_response,
+            "delta": _rescan_delta(
+                {
+                    "best_match_score": entry.best_match_score,
+                    "matched_open_jobs_count": entry.matched_open_jobs_count,
+                },
+                {
+                    "best_match_score": entry.best_match_score,
+                    "matched_open_jobs_count": entry.matched_open_jobs_count,
+                },
+                trigger_type,
+            ),
+            "skipped": True,
+            "message": f"Cooldown active for trigger '{trigger_type}'",
+        }
+
+    before_snapshot = {
+        "best_match_score": entry.best_match_score,
+        "matched_open_jobs_count": entry.matched_open_jobs_count,
+    }
     ranked_matches = _get_entry_job_matches(session, entry, target_job_id=target_job_id)
 
-    entry.last_rescanned_at = datetime.utcnow()
+    entry.last_rescanned_at = _utcnow()
     entry.updated_at = entry.last_rescanned_at
     entry.match_snapshot = json.dumps(ranked_matches[:5]) if ranked_matches else None
     entry.matched_open_jobs_count = len(
@@ -240,11 +347,23 @@ def rescan_talent_pool_entry(
         entry.best_match_job_id = None
         entry.best_match_score = None
 
+    _store_rescan_state(entry, trigger_type, entry.last_rescanned_at)
+
     session.add(entry)
     session.commit()
     session.refresh(entry)
 
-    return _build_entry_response(session, entry)
+    entry_response = _build_entry_response(session, entry)
+    after_snapshot = {
+        "best_match_score": entry.best_match_score,
+        "matched_open_jobs_count": entry.matched_open_jobs_count,
+    }
+    return {
+        "entry": entry_response,
+        "delta": _rescan_delta(before_snapshot, after_snapshot, trigger_type),
+        "skipped": False,
+        "message": None,
+    }
 
 
 def save_application_to_talent_pool(
@@ -254,6 +373,9 @@ def save_application_to_talent_pool(
     notes: Optional[str] = None,
     auto_rescan: bool = True,
 ) -> Tuple[TalentPoolEntryResponse, bool]:
+    if application.status != ApplicationStatus.REJECTED:
+        raise ValueError("Only rejected applications can be added to the talent pool")
+
     existing = session.exec(
         select(TalentPoolEntry).where(
             TalentPoolEntry.source_application_id == application.id
@@ -272,7 +394,7 @@ def save_application_to_talent_pool(
         existing.source_status = application.status
         existing.pool_status = TalentPoolStatus.ACTIVE
         existing.notes = notes if notes is not None else existing.notes
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = _utcnow()
         session.add(existing)
         session.commit()
         session.refresh(existing)
@@ -294,8 +416,8 @@ def save_application_to_talent_pool(
         created = True
 
     response = (
-        rescan_talent_pool_entry(session, entry)
-        if auto_rescan
+        rescan_talent_pool_entry(session, entry)["entry"]
+        if auto_rescan and is_automation_enabled("pool_autorescan")
         else _build_entry_response(session, entry)
     )
     return response, created
@@ -306,7 +428,9 @@ def bulk_rescan_talent_pool(
     target_job_id: Optional[int] = None,
     entry_ids: Optional[Iterable[int]] = None,
     recruiter_id: Optional[int] = None,
-) -> List[TalentPoolEntryResponse]:
+    trigger_type: str = "manual",
+) -> List[dict]:
+    validate_open_target_job(session, target_job_id)
     sync_rejected_applications_into_pool(session, recruiter_id=recruiter_id)
 
     entries = session.exec(
@@ -322,6 +446,11 @@ def bulk_rescan_talent_pool(
     updated_entries = []
     for entry in entries:
         updated_entries.append(
-            rescan_talent_pool_entry(session, entry, target_job_id=target_job_id)
+            rescan_talent_pool_entry(
+                session,
+                entry,
+                target_job_id=target_job_id,
+                trigger_type=trigger_type,
+            )
         )
     return updated_entries

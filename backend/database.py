@@ -119,6 +119,101 @@ def ensure_deployment_contract_alert_schema() -> None:
         connection.commit()
 
 
+def ensure_automation_schema() -> None:
+    """
+    Ensure automation support tables and audit log upgrades exist.
+    """
+    if engine.url.get_backend_name() != "postgresql":
+        return
+
+    with engine.connect() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS automation_job (
+                    id SERIAL PRIMARY KEY,
+                    job_type VARCHAR(80) NOT NULL,
+                    idempotency_key VARCHAR(120) NOT NULL,
+                    actor_type VARCHAR(20) NOT NULL DEFAULT 'user',
+                    actor_user_id INTEGER NULL,
+                    payload_json TEXT NOT NULL,
+                    result_json TEXT NULL,
+                    error_message TEXT NULL,
+                    status VARCHAR(20) NOT NULL DEFAULT 'queued',
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    max_attempts INTEGER NOT NULL DEFAULT 3,
+                    latency_ms INTEGER NULL,
+                    next_retry_at TIMESTAMP NULL,
+                    started_at TIMESTAMP NULL,
+                    finished_at TIMESTAMP NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_automation_job_idempotency UNIQUE (job_type, idempotency_key)
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS report_schedule (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(150) NOT NULL,
+                    report_type VARCHAR(50) NOT NULL,
+                    format VARCHAR(20) NOT NULL DEFAULT 'json',
+                    cadence VARCHAR(30) NOT NULL DEFAULT 'manual',
+                    job_id INTEGER NULL,
+                    date_from TIMESTAMP NULL,
+                    date_to TIMESTAMP NULL,
+                    delivery_channel VARCHAR(30) NOT NULL DEFAULT 'in_app',
+                    recipient_email VARCHAR(255) NULL,
+                    created_by_user_id INTEGER NULL,
+                    config_json TEXT NOT NULL DEFAULT '{}',
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    last_run_at TIMESTAMP NULL,
+                    next_run_at TIMESTAMP NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS actor_type VARCHAR(20) NOT NULL DEFAULT 'user'"
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS before_state TEXT NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS after_state TEXT NULL"
+            )
+        )
+        connection.execute(
+            text("ALTER TABLE audit_log ALTER COLUMN user_id DROP NOT NULL")
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_automation_job_status ON automation_job (status)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_automation_job_job_type ON automation_job (job_type)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_report_schedule_active ON report_schedule (is_active)"
+            )
+        )
+        connection.commit()
+
+
 def ensure_user_profile_fields() -> None:
     """
     Ensure candidate professional profile columns exist on `user` table.
@@ -134,6 +229,93 @@ def ensure_user_profile_fields() -> None:
         connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255)"))
         connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS portfolio_url VARCHAR(255)"))
         connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS professional_summary VARCHAR(2000)"))
+        connection.commit()
+
+
+def ensure_user_lifecycle_fields() -> None:
+    """
+    Ensure user lifecycle columns exist for archive/restore/delete workflows.
+    """
+    if engine.url.get_backend_name() != "postgresql":
+        return
+
+    with engine.connect() as connection:
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS status VARCHAR(20)"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS archived_by_user_id INTEGER"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS archive_reason VARCHAR(500)"))
+        connection.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP"))
+        connection.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'fk_user_archived_by_user'
+                    ) THEN
+                        ALTER TABLE "user"
+                        ADD CONSTRAINT fk_user_archived_by_user
+                        FOREIGN KEY (archived_by_user_id) REFERENCES "user"(id);
+                    END IF;
+                END
+                $$;
+                """
+            )
+        )
+        connection.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_user_status ON \"user\" (status)")
+        )
+        connection.execute(
+            text("UPDATE \"user\" SET status = 'active' WHERE status IS NULL OR status = ''")
+        )
+        connection.commit()
+
+
+def ensure_talent_pool_fields() -> None:
+    """
+    Ensure talent pool cooldown metadata exists.
+    """
+    if engine.url.get_backend_name() != "postgresql":
+        return
+
+    with engine.connect() as connection:
+        connection.execute(
+            text(
+                "ALTER TABLE talent_pool_entry ADD COLUMN IF NOT EXISTS rescan_state_json TEXT NULL"
+            )
+        )
+        connection.commit()
+
+
+def ensure_document_metadata_fields() -> None:
+    """
+    Ensure document OCR suggestion columns exist.
+    """
+    if engine.url.get_backend_name() != "postgresql":
+        return
+
+    with engine.connect() as connection:
+        connection.execute(
+            text(
+                "ALTER TABLE document ADD COLUMN IF NOT EXISTS document_type_candidate VARCHAR(100) NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE document ADD COLUMN IF NOT EXISTS expiration_date_candidate TIMESTAMP NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE document ADD COLUMN IF NOT EXISTS extraction_confidence DOUBLE PRECISION NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE document ADD COLUMN IF NOT EXISTS metadata_confirmed BOOLEAN NOT NULL DEFAULT FALSE"
+            )
+        )
         connection.commit()
 
 

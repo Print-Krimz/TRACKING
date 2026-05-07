@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  archiveUser,
   assignRole,
   deleteApplication,
   deleteJob,
+  deleteUser,
   getAllRoles,
   getAllUsers,
   getAnalyticsOverview,
   getApplications,
   getJobs,
+  restoreUser,
   toggleShortlist,
   updateApplicationStatus,
   updateJob,
@@ -16,6 +19,7 @@ import {
   getSystemStats,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { BarChart3, Users, ClipboardList, Briefcase, Search, Settings, Star, CheckCircle2, Building2, Database } from "lucide-react";
 import "./AdminControlPanel.css";
 
@@ -23,10 +27,24 @@ const JOB_STATUS_OPTIONS = ["draft", "open", "paused", "closed", "filled"];
 
 const AdminControlPanel = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    kind: null,
+    title: "",
+    message: "",
+    confirmLabel: "Confirm",
+    confirmTone: "default",
+    requireReason: false,
+    reasonLabel: "",
+    reasonPlaceholder: "",
+    reasonOptional: false,
+    reason: "",
+    payload: null,
+  });
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   // Data
   const [users, setUsers] = useState([]);
@@ -54,7 +72,6 @@ const AdminControlPanel = () => {
   const loadPanelData = async () => {
     try {
       setLoading(true);
-      setError("");
       const [usersData, rolesData, appsData, jobsData, overviewData, statsData] =
         await Promise.all([
           getAllUsers(),
@@ -72,7 +89,7 @@ const AdminControlPanel = () => {
       setOverview(overviewData);
       setSystemStats(statsData);
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to load admin data.");
+      toast.error(err.response?.data?.detail || "We couldn't load admin data.");
     } finally {
       setLoading(false);
     }
@@ -116,9 +133,26 @@ const AdminControlPanel = () => {
     return { users: users.length, applicants: applications.length, shortlisted, hired, jobs: jobs.length };
   }, [applications, jobs, users]);
 
-  const setBanner = (message) => {
-    setSuccess(message);
-    setTimeout(() => setSuccess(""), 2500);
+  const openConfirmDialog = (config) => {
+    setConfirmDialog({
+      isOpen: true,
+      kind: config.kind,
+      title: config.title,
+      message: config.message,
+      confirmLabel: config.confirmLabel || "Confirm",
+      confirmTone: config.confirmTone || "default",
+      requireReason: Boolean(config.requireReason),
+      reasonLabel: config.reasonLabel || "",
+      reasonPlaceholder: config.reasonPlaceholder || "",
+      reasonOptional: Boolean(config.reasonOptional),
+      reason: config.reason || "",
+      payload: config.payload || null,
+    });
+  };
+
+  const closeConfirmDialog = () => {
+    if (confirmBusy) return;
+    setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
   };
 
   // --- Handlers ---
@@ -126,19 +160,59 @@ const AdminControlPanel = () => {
     try {
       const updated = await assignRole(targetUserId, roleName);
       setUsers((prev) => prev.map((u) => (u.id === targetUserId ? updated : u)));
-      setBanner("User role updated.");
+      toast.success("Role updated successfully.");
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to update role.");
+      toast.error(err.response?.data?.detail || "Failed to update role.");
     }
+  };
+
+  const handleArchiveUser = (entry) => {
+    openConfirmDialog({
+      kind: "archive-user",
+      title: "Archive User",
+      message: `Archive ${entry.username}? They will lose access to all modules immediately.`,
+      confirmLabel: "Archive",
+      confirmTone: "danger",
+      requireReason: true,
+      reasonLabel: "Reason",
+      reasonPlaceholder: "Enter archive reason",
+      reason: "Access revoked",
+      payload: entry,
+    });
+  };
+
+  const handleRestoreUser = (entry) => {
+    openConfirmDialog({
+      kind: "restore-user",
+      title: "Restore User",
+      message: `Restore ${entry.username}? Their role-based access will be re-enabled.`,
+      confirmLabel: "Restore",
+      requireReason: true,
+      reasonOptional: true,
+      reasonLabel: "Reason (Optional)",
+      reasonPlaceholder: "Optional note for audit trail",
+      payload: entry,
+    });
+  };
+
+  const handleDeleteUser = (entry) => {
+    openConfirmDialog({
+      kind: "delete-user",
+      title: "Delete User Permanently",
+      message: `Delete ${entry.username} permanently? This cannot be undone and only works when no dependent records exist.`,
+      confirmLabel: "Delete Permanently",
+      confirmTone: "danger",
+      payload: entry,
+    });
   };
 
   const handleApproveCandidate = async (applicationId) => {
     try {
       const updated = await updateApplicationStatus(applicationId, "hired");
       setApplications((prev) => prev.map((a) => (a.id === applicationId ? { ...a, ...updated } : a)));
-      setBanner("Candidate approved and marked as hired.");
+      toast.success("Candidate approved and marked as hired.");
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to approve candidate.");
+      toast.error(err.response?.data?.detail || "Failed to approve candidate.");
     }
   };
 
@@ -146,42 +220,42 @@ const AdminControlPanel = () => {
     try {
       const updated = await toggleShortlist(applicationId);
       setApplications((prev) => prev.map((a) => (a.id === applicationId ? { ...a, ...updated } : a)));
-      setBanner(updated.is_shortlisted ? "Candidate shortlisted." : "Removed from shortlist.");
+      toast.success(updated.is_shortlisted ? "Candidate shortlisted." : "Removed from shortlist.");
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to update shortlist.");
+      toast.error(err.response?.data?.detail || "Failed to update shortlist.");
     }
   };
 
-  const handleRemoveCandidate = async (applicationId) => {
-    if (!window.confirm("Remove this candidate record permanently?")) return;
-    try {
-      await deleteApplication(applicationId);
-      setApplications((prev) => prev.filter((a) => a.id !== applicationId));
-      setBanner("Candidate record removed.");
-    } catch (err) {
-      setError(err.response?.data?.detail || "Failed to remove candidate.");
-    }
+  const handleRemoveCandidate = (applicationId) => {
+    openConfirmDialog({
+      kind: "delete-candidate",
+      title: "Remove Candidate Record",
+      message: "Remove this candidate record permanently?",
+      confirmLabel: "Remove",
+      confirmTone: "danger",
+      payload: { applicationId },
+    });
   };
 
   const handleJobStatusChange = async (jobId, nextStatus) => {
     try {
       const updated = await updateJob(jobId, { status: nextStatus });
       setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, ...updated } : j)));
-      setBanner("Job posting updated.");
+      toast.success("Job posting updated.");
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to update job status.");
+      toast.error(err.response?.data?.detail || "Failed to update job status.");
     }
   };
 
-  const handleDeleteJob = async (jobId) => {
-    if (!window.confirm("Delete this job posting?")) return;
-    try {
-      await deleteJob(jobId);
-      setJobs((prev) => prev.filter((j) => j.id !== jobId));
-      setBanner("Job posting removed.");
-    } catch (err) {
-      setError(err.response?.data?.detail || "Failed to delete job posting.");
-    }
+  const handleDeleteJob = (jobId) => {
+    openConfirmDialog({
+      kind: "delete-job",
+      title: "Delete Job Posting",
+      message: "Delete this job posting permanently?",
+      confirmLabel: "Delete",
+      confirmTone: "danger",
+      payload: { jobId },
+    });
   };
 
   // --- Helpers ---
@@ -194,10 +268,49 @@ const AdminControlPanel = () => {
   };
 
   const formatTimestamp = (ts) => {
-    if (!ts) return "—";
+    if (!ts) return "--";
     const d = new Date(ts);
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
       " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const handleConfirmDialogAction = async () => {
+    const { kind, payload, reason, requireReason, reasonOptional } = confirmDialog;
+    if (requireReason && !reasonOptional && !reason.trim()) {
+      toast.warning("Please provide a reason before continuing.");
+      return;
+    }
+
+    setConfirmBusy(true);
+    try {
+      if (kind === "archive-user") {
+        const updated = await archiveUser(payload.id, reason.trim());
+        setUsers((prev) => prev.map((u) => (u.id === payload.id ? updated : u)));
+        toast.success("User archived successfully.");
+      } else if (kind === "restore-user") {
+        const updated = await restoreUser(payload.id, reason.trim());
+        setUsers((prev) => prev.map((u) => (u.id === payload.id ? updated : u)));
+        toast.success("User restored successfully.");
+      } else if (kind === "delete-user") {
+        await deleteUser(payload.id);
+        setUsers((prev) => prev.filter((u) => u.id !== payload.id));
+        toast.success("User deleted successfully.");
+      } else if (kind === "delete-candidate") {
+        await deleteApplication(payload.applicationId);
+        setApplications((prev) => prev.filter((a) => a.id !== payload.applicationId));
+        toast.success("Candidate record removed.");
+      } else if (kind === "delete-job") {
+        await deleteJob(payload.jobId);
+        setJobs((prev) => prev.filter((j) => j.id !== payload.jobId));
+        toast.success("Job posting removed.");
+      }
+
+      setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Action failed. Please try again.");
+    } finally {
+      setConfirmBusy(false);
+    }
   };
 
   if (loading) {
@@ -235,20 +348,46 @@ const AdminControlPanel = () => {
         </div>
       </div>
 
-      {/* Banners */}
-      {error && (
-        <div className="panel-banner error">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError("")}>×</button>
+      {confirmDialog.isOpen && (
+        <div
+          className="confirm-overlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={closeConfirmDialog}
+        >
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{confirmDialog.title}</h3>
+            <p>{confirmDialog.message}</p>
+            {confirmDialog.requireReason && (
+              <div className="confirm-field">
+                <label htmlFor="confirm-reason">{confirmDialog.reasonLabel}</label>
+                <input
+                  id="confirm-reason"
+                  type="text"
+                  value={confirmDialog.reason}
+                  onChange={(e) =>
+                    setConfirmDialog((prev) => ({ ...prev, reason: e.target.value }))
+                  }
+                  placeholder={confirmDialog.reasonPlaceholder}
+                  disabled={confirmBusy}
+                />
+              </div>
+            )}
+            <div className="confirm-actions">
+              <button className="mini-btn" onClick={closeConfirmDialog} disabled={confirmBusy}>
+                Cancel
+              </button>
+              <button
+                className={`mini-btn ${confirmDialog.confirmTone === "danger" ? "danger" : ""}`}
+                onClick={handleConfirmDialogAction}
+                disabled={confirmBusy}
+              >
+                {confirmBusy ? "Processing..." : confirmDialog.confirmLabel}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-      {success && (
-        <div className="panel-banner success">
-          <span>{success}</span>
-          <button type="button" onClick={() => setSuccess("")}>×</button>
-        </div>
-      )}
-
       {/* Tabs */}
       <div className="admin-tabs">
         {tabs.map((tab) => (
@@ -266,7 +405,7 @@ const AdminControlPanel = () => {
       {/* Tab Content */}
       <div className="admin-tab-content">
 
-        {/* ── OVERVIEW ── */}
+        {/* â”€â”€ OVERVIEW â”€â”€ */}
         {activeTab === "overview" && (
           <div className="tab-pane fade-in">
             <div className="overview-grid">
@@ -331,7 +470,7 @@ const AdminControlPanel = () => {
           </div>
         )}
 
-        {/* ── USERS & ROLES ── */}
+        {/* â”€â”€ USERS & ROLES â”€â”€ */}
         {activeTab === "users" && (
           <div className="tab-pane fade-in">
             <section className="panel-section">
@@ -342,13 +481,21 @@ const AdminControlPanel = () => {
                     <tr>
                       <th>User</th>
                       <th>Email</th>
+                      <th>Status</th>
                       <th>Role</th>
-                      <th>Permissions</th>
+                      <th>Access</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map((entry) => {
                       const permissions = rolePermissions.get(entry.role_name) || [];
+                      const moduleAccess = entry.effective_modules || {};
+                      const enabledModules = Object.entries(moduleAccess)
+                        .filter(([, isEnabled]) => Boolean(isEnabled))
+                        .map(([key]) => key.replace(/_/g, " "));
+                      const isArchived = entry.status === "archived";
+                      const disableActions = entry.id === user?.id;
                       return (
                         <tr key={entry.id}>
                           <td>
@@ -362,11 +509,16 @@ const AdminControlPanel = () => {
                           </td>
                           <td className="text-muted">{entry.email}</td>
                           <td>
+                            <span className={`account-status-pill ${isArchived ? "archived" : "active"}`}>
+                              {entry.status || "active"}
+                            </span>
+                          </td>
+                          <td>
                             <select
                               className="role-select"
                               value={entry.role_name || ""}
                               onChange={(e) => handleRoleChange(entry.id, e.target.value)}
-                              disabled={entry.id === user?.id}
+                              disabled={disableActions}
                             >
                               {roles.map((role) => (
                                 <option key={role.id} value={role.name}>{role.name}</option>
@@ -374,7 +526,48 @@ const AdminControlPanel = () => {
                             </select>
                           </td>
                           <td>
-                            <span className="perm-badge">{permissions.length} permissions</span>
+                            <div className="access-cell">
+                              <span className="perm-badge">{permissions.length} permissions</span>
+                              <div className="module-tags">
+                                {enabledModules.length === 0 ? (
+                                  <span className="module-tag muted">No module access</span>
+                                ) : (
+                                  enabledModules.map((moduleName) => (
+                                    <span key={`${entry.id}-${moduleName}`} className="module-tag">
+                                      {moduleName}
+                                    </span>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="action-row">
+                              {isArchived ? (
+                                <button
+                                  className="mini-btn"
+                                  disabled={disableActions}
+                                  onClick={() => handleRestoreUser(entry)}
+                                >
+                                  Restore
+                                </button>
+                              ) : (
+                                <button
+                                  className="mini-btn"
+                                  disabled={disableActions}
+                                  onClick={() => handleArchiveUser(entry)}
+                                >
+                                  Archive
+                                </button>
+                              )}
+                              <button
+                                className="mini-btn danger"
+                                disabled={disableActions}
+                                onClick={() => handleDeleteUser(entry)}
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -386,7 +579,7 @@ const AdminControlPanel = () => {
           </div>
         )}
 
-        {/* ── CANDIDATES ── */}
+        {/* â”€â”€ CANDIDATES â”€â”€ */}
         {activeTab === "candidates" && (
           <div className="tab-pane fade-in">
             <section className="panel-section">
@@ -408,7 +601,7 @@ const AdminControlPanel = () => {
                         <td>{app.candidate_name || `Candidate #${app.candidate_id}`}</td>
                         <td>{app.job_title || `Job #${app.job_id}`}</td>
                         <td><span className={`status-pill status-${app.status}`}>{app.status}</span></td>
-                        <td>{app.match_score ?? "—"}</td>
+                        <td>{app.match_score ?? "â€”"}</td>
                         <td>
                           <div className="action-row">
                             <button className="mini-btn" disabled={app.status === "hired"} onClick={() => handleApproveCandidate(app.id)}>Approve</button>
@@ -425,7 +618,7 @@ const AdminControlPanel = () => {
           </div>
         )}
 
-        {/* ── JOB POSTINGS ── */}
+        {/* â”€â”€ JOB POSTINGS â”€â”€ */}
         {activeTab === "jobs" && (
           <div className="tab-pane fade-in">
             <section className="panel-section">
@@ -444,7 +637,7 @@ const AdminControlPanel = () => {
                     {jobs.map((job) => (
                       <tr key={job.id}>
                         <td><strong>{job.title}</strong></td>
-                        <td>{job.department || "—"}</td>
+                        <td>{job.department || "â€”"}</td>
                         <td>
                           <select
                             className="role-select"
@@ -471,7 +664,7 @@ const AdminControlPanel = () => {
           </div>
         )}
 
-        {/* ── AUDIT TRAIL ── */}
+        {/* â”€â”€ AUDIT TRAIL â”€â”€ */}
         {activeTab === "audit" && (
           <div className="tab-pane fade-in">
             <section className="panel-section">
@@ -519,7 +712,7 @@ const AdminControlPanel = () => {
                             <td><strong>{log.username}</strong></td>
                             <td><span className="action-badge">{log.action}</span></td>
                             <td>{log.entity_type}{log.entity_id ? ` #${log.entity_id}` : ""}</td>
-                            <td className="text-muted detail-cell">{log.details || "—"}</td>
+                            <td className="text-muted detail-cell">{log.details || "â€”"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -530,15 +723,15 @@ const AdminControlPanel = () => {
                       className="mini-btn"
                       disabled={auditPage === 0}
                       onClick={() => setAuditPage((p) => Math.max(0, p - 1))}
-                    >← Previous</button>
+                    >â† Previous</button>
                     <span className="page-info">
-                      Showing {auditPage * AUDIT_PAGE_SIZE + 1}–{Math.min((auditPage + 1) * AUDIT_PAGE_SIZE, auditTotal)} of {auditTotal}
+                      Showing {auditPage * AUDIT_PAGE_SIZE + 1}â€“{Math.min((auditPage + 1) * AUDIT_PAGE_SIZE, auditTotal)} of {auditTotal}
                     </span>
                     <button
                       className="mini-btn"
                       disabled={(auditPage + 1) * AUDIT_PAGE_SIZE >= auditTotal}
                       onClick={() => setAuditPage((p) => p + 1)}
-                    >Next →</button>
+                    >Next â†’</button>
                   </div>
                 </>
               )}
@@ -546,7 +739,7 @@ const AdminControlPanel = () => {
           </div>
         )}
 
-        {/* ── SYSTEM ── */}
+        {/* â”€â”€ SYSTEM â”€â”€ */}
         {activeTab === "system" && (
           <div className="tab-pane fade-in">
             <section className="panel-section">

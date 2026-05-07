@@ -7,13 +7,14 @@ from sqlmodel import Session
 from database import get_session
 from dependencies import get_current_user
 from models.user import User
-from schemas.document import DocumentResponse, DocumentListResponse
+from schemas.document import DocumentResponse, DocumentListResponse, DocumentMetadataUpdateRequest
 from models.controllers.document_controller import (
     submit_document_file,
     get_documents,
     get_user_documents,
     download_document,
-    delete_document
+    delete_document,
+    confirm_document_metadata,
 )
 
 # Create the router with prefix and tags
@@ -77,6 +78,28 @@ def list_documents(
 ):
     docs = get_documents(session, current_user)
     return DocumentListResponse(documents=docs, total=len(docs))
+
+
+@router.patch("/{doc_id}/metadata", response_model=DocumentResponse)
+def update_document_metadata(
+    doc_id: int,
+    request: DocumentMetadataUpdateRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return confirm_document_metadata(
+            session=session,
+            doc_id=doc_id,
+            current_user=current_user,
+            document_type=request.document_type,
+            expiration_date=request.expiration_date,
+        )
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
 @router.get("/user/{user_id}", response_model=DocumentListResponse)
 def list_user_documents(

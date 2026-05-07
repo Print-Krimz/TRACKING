@@ -97,6 +97,74 @@
 
 .panel-banner button:hover { opacity: 1; }
 
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.68);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: var(--space-4);
+}
+
+.confirm-modal {
+  width: min(520px, 100%);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--space-6);
+}
+
+.confirm-modal h3 {
+  margin: 0 0 var(--space-2);
+  color: var(--text-primary);
+  font-size: var(--font-xl);
+}
+
+.confirm-modal p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.confirm-field {
+  margin-top: var(--space-4);
+}
+
+.confirm-field label {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.confirm-field input {
+  width: 100%;
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-sm);
+}
+
+.confirm-field input:focus {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.confirm-actions {
+  margin-top: var(--space-5);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
 /* Tabs */
 .admin-tabs {
   display: flex;
@@ -368,6 +436,52 @@
   background: rgba(59, 130, 246, 0.08);
   color: var(--brand-400);
   border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.access-cell {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.module-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.module-tag {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--surface-border-strong);
+  background: var(--surface-bg);
+  color: var(--text-secondary);
+  font-size: var(--font-2xs);
+  text-transform: capitalize;
+}
+
+.module-tag.muted {
+  opacity: 0.7;
+}
+
+.account-status-pill {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  font-size: var(--font-2xs);
+  font-weight: var(--weight-bold);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.account-status-pill.active {
+  background: var(--success-bg);
+  color: var(--success-400);
+}
+
+.account-status-pill.archived {
+  background: var(--error-bg);
+  color: var(--error-400);
 }
 
 /* Status Pills */

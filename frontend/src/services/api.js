@@ -149,8 +149,8 @@ export const changePassword = async (data) => {
  *
  * @returns {Promise<Object>} List of all users
  */
-export const getAllUsers = async () => {
-  const response = await api.get("/users/");
+export const getAllUsers = async (params = {}) => {
+  const response = await api.get("/users/", { params });
   return response.data;
 };
 
@@ -167,6 +167,44 @@ export const assignRole = async (userId, roleName) => {
     role_name: roleName,
   });
   return response.data;
+};
+
+/**
+ * Archive a user account.
+ * Requires 'manage_users' permission (Admin only).
+ *
+ * @param {number} userId - ID of user to archive
+ * @param {string} reason - Archive reason
+ * @returns {Promise<Object>} Updated user data
+ */
+export const archiveUser = async (userId, reason) => {
+  const response = await api.patch(`/users/${userId}/archive`, { reason });
+  return response.data;
+};
+
+/**
+ * Restore an archived user account.
+ * Requires 'manage_users' permission (Admin only).
+ *
+ * @param {number} userId - ID of user to restore
+ * @param {string} reason - Optional restore reason
+ * @returns {Promise<Object>} Updated user data
+ */
+export const restoreUser = async (userId, reason = "") => {
+  const payload = reason ? { reason } : {};
+  const response = await api.patch(`/users/${userId}/restore`, payload);
+  return response.data;
+};
+
+/**
+ * Permanently delete a user account.
+ * Requires 'manage_users' permission (Admin only).
+ *
+ * @param {number} userId - ID of user to delete
+ * @returns {Promise<void>}
+ */
+export const deleteUser = async (userId) => {
+  await api.delete(`/users/${userId}`, { params: { confirm: true } });
 };
 
 /**
@@ -287,6 +325,11 @@ export const getJobs = async (options = {}) => {
   return response.data;
 };
 
+export const assistJobDraft = async (payload) => {
+  const response = await api.post("/jobs/assist/draft", payload);
+  return response.data;
+};
+
 /**
  * Get a specific job by ID.
  *
@@ -390,6 +433,24 @@ export const getApplications = async (jobId = null, options = {}) => {
   return response.data;
 };
 
+export const bulkUpdateApplicationStatus = async (applicationIds, status, notes = null) => {
+  const response = await api.patch("/applications/bulk-status", {
+    application_ids: applicationIds,
+    status,
+    notes,
+  });
+  return response.data;
+};
+
+export const bulkUpdateApplicationShortlist = async (applicationIds, shortlisted = true, notes = null) => {
+  const response = await api.patch("/applications/bulk-shortlist", {
+    application_ids: applicationIds,
+    shortlisted,
+    notes,
+  });
+  return response.data;
+};
+
 // ==========================================
 // DOCUMENTS (DIGITAL 201 VAULT)
 // ==========================================
@@ -440,6 +501,11 @@ export const getMyApplications = async (options = {}) => {
   return response.data;
 };
 
+export const updateDocumentMetadata = async (docId, data) => {
+  const response = await api.patch(`/documents/${docId}/metadata`, data);
+  return response.data;
+};
+
 export const getApplicationMessages = async (
   applicationId,
   { page = 1, limit = 50, signal } = {},
@@ -473,6 +539,16 @@ export const createInterview = async (applicationId, data) => {
   return response.data;
 };
 
+export const suggestInterviewSlots = async (payload) => {
+  const response = await api.post("/interviews/suggest-slots", payload);
+  return response.data;
+};
+
+export const sendInterviewInvite = async (interviewId, payload = {}) => {
+  const response = await api.post(`/interviews/${interviewId}/send-invite`, payload);
+  return response.data;
+};
+
 export const getApplicationInterviews = async (applicationId) => {
   const response = await api.get(`/applications/${applicationId}/interviews`);
   return response.data;
@@ -485,6 +561,16 @@ export const updateInterview = async (interviewId, data) => {
 
 export const getUpcomingInterviews = async (params = {}) => {
   const response = await api.get("/interviews/upcoming", { params });
+  return response.data;
+};
+
+export const getAutomationFlags = async () => {
+  const response = await api.get("/automation/flags");
+  return response.data;
+};
+
+export const getAutomationMetrics = async () => {
+  const response = await api.get("/automation/metrics");
   return response.data;
 };
 
@@ -803,6 +889,20 @@ export const scoreJobApplications = async (jobId) => {
 export const getAvailableReports = async () => {
   const response = await api.get("/analytics/reports");
   return response.data;
+};
+
+export const createReportSchedule = async (payload) => {
+  const response = await api.post("/analytics/reports/schedules", payload);
+  return response.data;
+};
+
+export const getReportSchedules = async () => {
+  const response = await api.get("/analytics/reports/schedules");
+  return response.data;
+};
+
+export const deleteReportSchedule = async (scheduleId) => {
+  await api.delete(`/analytics/reports/schedules/${scheduleId}`);
 };
 
 /**

@@ -5,6 +5,8 @@ Recruiter workflows for saving and rematching candidates who were not selected
 for their original application.
 """
 
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session
 
@@ -20,7 +22,10 @@ from schemas.talent_pool import (
     TalentPoolSaveRequest,
     TalentPoolSaveResponse,
 )
+from services.automation_flags import is_automation_enabled
+from services.automation_job_service import enqueue_automation_job
 from services.talent_pool_service import (
+    TalentPoolValidationError,
     bulk_rescan_talent_pool,
     list_talent_pool_entries,
     rescan_talent_pool_entry,
@@ -59,6 +64,8 @@ def save_candidate_to_talent_pool(
             notes=request.notes,
             auto_rescan=request.auto_rescan,
         )
+    except TalentPoolValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -110,12 +117,38 @@ def rescan_pool_entry(
     session: Session = Depends(get_session),
     current_user: User = Depends(check_permissions("manage_applications")),
 ):
+    if not is_automation_enabled("pool_autorescan"):
+        raise HTTPException(status_code=503, detail="Talent pool rescans are disabled.")
+
     entry = session.get(TalentPoolEntry, entry_id)
     if not entry:
         raise HTTPException(status_code=404, detail="Talent pool entry not found")
 
-    updated = rescan_talent_pool_entry(session, entry, target_job_id=target_job_id)
-    return TalentPoolRescanResponse(entry=updated)
+    job = enqueue_automation_job(
+        session=session,
+        job_type="talent_pool_rescan",
+        payload={
+            "entry_ids": [entry_id],
+            "target_job_id": target_job_id,
+            "trigger_type": "manual_rescan",
+        },
+        actor_user_id=current_user.id,
+        idempotency_key=json.dumps({"entry_ids": [entry_id], "target_job_id": target_job_id}, sort_keys=True),
+    )
+    if not job.result_json:
+        raise HTTPException(status_code=400, detail=job.error_message or "Talent pool rescan failed.")
+    result = json.loads(job.result_json or "{}")
+    if not result.get("entries"):
+        raise HTTPException(status_code=400, detail="Talent pool rescan returned no results.")
+
+    first_entry = result["entries"][0]
+    first_delta = result.get("deltas", [{}])[0]
+    return TalentPoolRescanResponse(
+        entry=first_entry,
+        delta=first_delta,
+        skipped=bool(result.get("skipped_count")),
+        message=None,
+    )
 
 
 @router.post(
@@ -129,15 +162,34 @@ def bulk_rescan_pool(
     session: Session = Depends(get_session),
     current_user: User = Depends(check_permissions("manage_applications")),
 ):
-    updated_entries = bulk_rescan_talent_pool(
-        session,
-        target_job_id=target_job_id,
-        recruiter_id=current_user.id,
-    )
-    matched_entries = len([entry for entry in updated_entries if entry.matched_open_jobs_count > 0])
+    if not is_automation_enabled("pool_autorescan"):
+        raise HTTPException(status_code=503, detail="Talent pool rescans are disabled.")
+
+    try:
+        job = enqueue_automation_job(
+            session=session,
+            job_type="talent_pool_rescan",
+            payload={
+                "target_job_id": target_job_id,
+                "trigger_type": "manual_rescan",
+            },
+            actor_user_id=current_user.id,
+            idempotency_key=json.dumps({"target_job_id": target_job_id, "trigger_type": "manual_rescan"}, sort_keys=True),
+        )
+        if not job.result_json:
+            raise HTTPException(status_code=400, detail=job.error_message or "Talent pool rescan failed.")
+    except TalentPoolValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    result = json.loads(job.result_json or "{}")
+    entries = result.get("entries", [])
+    deltas = result.get("deltas", [])
+    matched_entries = len([entry for entry in entries if entry.get("matched_open_jobs_count", 0) > 0])
 
     return TalentPoolBulkRescanResponse(
-        rescanned_count=len(updated_entries),
+        rescanned_count=int(result.get("rescanned_count", len(entries))),
         matched_entries=matched_entries,
-        entries=updated_entries,
+        skipped_count=int(result.get("skipped_count", 0)),
+        entries=entries,
+        deltas=deltas,
     )

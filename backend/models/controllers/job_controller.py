@@ -27,7 +27,9 @@ from schemas.job import (
     JobCriteriaResponse,
     JobKeywordResponse,
 )
-from services.talent_pool_service import bulk_rescan_talent_pool
+from services.automation_flags import is_automation_enabled
+from services.audit_service import log_audit
+from services.automation_job_service import enqueue_automation_job
 
 
 # =============================================================================
@@ -128,11 +130,35 @@ def create_job(
         session.commit()
         session.refresh(job)
 
-    if job.status == JobStatus.OPEN:
+    if job.status == JobStatus.OPEN and is_automation_enabled("pool_autorescan"):
         try:
-            bulk_rescan_talent_pool(session, target_job_id=job.id)
+            enqueue_automation_job(
+                session=session,
+                job_type="talent_pool_rescan",
+                payload={"target_job_id": job.id, "trigger_type": "job_created"},
+                actor_user_id=current_user.id,
+                idempotency_key=f"job-created-rescan:{job.id}",
+            )
         except Exception:
             pass
+
+    log_audit(
+        session=session,
+        user_id=current_user.id,
+        action="CREATE_JOB",
+        entity_type="JobRequisition",
+        entity_id=job.id,
+        details=f"Created job '{job.title}'",
+        before_state=None,
+        after_state=json.dumps(
+            {
+                "title": job.title,
+                "status": job.status.value if hasattr(job.status, "value") else job.status,
+                "criteria_count": len(job.criteria or []),
+            }
+        ),
+    )
+    session.commit()
 
     return _to_response(job)
 
@@ -210,6 +236,21 @@ def get_job_by_id(
     if not job:
         raise ValueError(f"Job with ID {job_id} not found")
 
+    before_state = {
+        "title": job.title,
+        "description": job.description,
+        "department": job.department,
+        "location": job.location,
+        "employment_type": job.employment_type,
+        "experience_years": job.experience_years,
+        "education_level": job.education_level,
+        "salary_min": job.salary_min,
+        "salary_max": job.salary_max,
+        "salary_currency": job.salary_currency,
+        "status": job.status.value if hasattr(job.status, "value") else job.status,
+        "criteria_count": len(job.criteria or []),
+    }
+
     # Candidates can only view open jobs
     if not current_user.has_permission("manage_jobs"):
         if job.status != JobStatus.OPEN:
@@ -280,15 +321,48 @@ def update_job(
             # Don't fail the update if keyword extraction fails
             pass
 
-    if job.status == JobStatus.OPEN and (
+    if job.status == JobStatus.OPEN and is_automation_enabled("pool_autorescan") and (
         description_changed
         or request.criteria is not None
         or "status" in update_data
     ):
         try:
-            bulk_rescan_talent_pool(session, target_job_id=job.id)
+            enqueue_automation_job(
+                session=session,
+                job_type="talent_pool_rescan",
+                payload={"target_job_id": job.id, "trigger_type": "job_criteria_updated"},
+                actor_user_id=current_user.id,
+                idempotency_key=f"job-updated-rescan:{job.id}:{int(description_changed)}:{int(request.criteria is not None)}:{int('status' in update_data)}",
+            )
         except Exception:
             pass
+
+    log_audit(
+        session=session,
+        user_id=current_user.id,
+        action="UPDATE_JOB",
+        entity_type="JobRequisition",
+        entity_id=job.id,
+        details=f"Updated job '{job.title}'",
+        before_state=json.dumps(before_state),
+        after_state=json.dumps(
+            {
+                "title": job.title,
+                "description": job.description,
+                "department": job.department,
+                "location": job.location,
+                "employment_type": job.employment_type,
+                "experience_years": job.experience_years,
+                "education_level": job.education_level,
+                "salary_min": job.salary_min,
+                "salary_max": job.salary_max,
+                "salary_currency": job.salary_currency,
+                "status": job.status.value if hasattr(job.status, "value") else job.status,
+                "criteria_count": len(job.criteria or []),
+            }
+        ),
+    )
+    session.commit()
 
     return _to_response(job)
 
@@ -312,7 +386,24 @@ def delete_job(
     if not job:
         raise ValueError(f"Job with ID {job_id} not found")
 
+    before_state = {
+        "title": job.title,
+        "status": job.status.value if hasattr(job.status, "value") else job.status,
+    }
+
     session.delete(job)
+    session.commit()
+
+    log_audit(
+        session=session,
+        user_id=current_user.id,
+        action="DELETE_JOB",
+        entity_type="JobRequisition",
+        entity_id=job_id,
+        details=f"Deleted job '{job.title}'",
+        before_state=json.dumps(before_state),
+        after_state=None,
+    )
     session.commit()
 
     return True

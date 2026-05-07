@@ -6,7 +6,11 @@ import {
   getApplicationTrends,
   downloadReport,
   getJobs,
-  getApplications
+  getApplications,
+  createReportSchedule,
+  deleteReportSchedule,
+  getReportSchedules,
+  getAutomationMetrics,
 } from "../services/api";
 import {
   AreaChart,
@@ -27,6 +31,11 @@ import { useToast } from "../context/ToastContext";
 
 const Reports = () => {
   const { showToast } = useToast();
+  const formatScheduleDate = (value) => {
+    if (!value) return "Never";
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+  };
   
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -39,6 +48,17 @@ const Reports = () => {
   const [trends, setTrends] = useState([]);
   const [recentJobs, setRecentJobs] = useState([]);
   const [recentCandidates, setRecentCandidates] = useState([]);
+  const [automationMetrics, setAutomationMetrics] = useState(null);
+  const [schedules, setSchedules] = useState([]);
+  const [scheduleForm, setScheduleForm] = useState({
+    name: "Weekly Pipeline Report",
+    report_type: "pipeline",
+    format: "json",
+    cadence: "weekly",
+    delivery_channel: "in_app",
+    recipient_email: "",
+  });
+  const [savingSchedule, setSavingSchedule] = useState(false);
 
   // Pagination States
   const [candidatePage, setCandidatePage] = useState(1);
@@ -61,14 +81,18 @@ const Reports = () => {
         pipelineData,
         trendsData,
         jobsData,
-        applicantsData
+        applicantsData,
+        automationData,
+        schedulesData,
       ] = await Promise.all([
         getAnalyticsOverview().catch(() => ({ open_jobs: 0, total_applications: 0 })),
         getTimeToHire(365).catch(() => ({ average_days: 0 })),
         getPipelineByJob(5).catch(() => ({ jobs: [] })),
         getApplicationTrends(30).catch(() => ({ trends: [] })),
         getJobs().catch(() => ({ jobs: [] })),
-        getApplications().catch(() => ({ applications: [] }))
+        getApplications().catch(() => ({ applications: [] })),
+        getAutomationMetrics().catch(() => null),
+        getReportSchedules().catch(() => ({ schedules: [] })),
       ]);
 
       setOverview(overviewData);
@@ -78,6 +102,8 @@ const Reports = () => {
       
       setRecentJobs(jobsData.jobs || []);
       setRecentCandidates(applicantsData.applications || []);
+      setAutomationMetrics(automationData);
+      setSchedules(schedulesData.schedules || []);
       setCandidatePage(1);
       setJobPage(1);
       
@@ -86,6 +112,32 @@ const Reports = () => {
       showToast("Failed to load some report data.", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateSchedule = async () => {
+    setSavingSchedule(true);
+    try {
+      const created = await createReportSchedule({
+        ...scheduleForm,
+        config: {},
+      });
+      setSchedules((prev) => [created, ...prev]);
+      showToast("Scheduled report created", "success");
+    } catch (err) {
+      showToast(err.response?.data?.detail || "Failed to create schedule", "error");
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
+  const handleDeleteSchedule = async (scheduleId) => {
+    try {
+      await deleteReportSchedule(scheduleId);
+      setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+      showToast("Scheduled report removed", "success");
+    } catch {
+      showToast("Failed to delete schedule", "error");
     }
   };
 
@@ -216,6 +268,69 @@ const Reports = () => {
           <h4>Avg. Time to Deploy</h4>
           <h2>0 days</h2>
           <span className="kpi-subtext">Deployed</span>
+        </div>
+        <div className="kpi-card">
+          <h4>Automation Success</h4>
+          <h2>{automationMetrics?.success_rate || 0}%</h2>
+          <span className="kpi-subtext">{automationMetrics?.avg_latency_ms || 0} ms avg</span>
+        </div>
+      </div>
+
+      <div className="report-panel" style={{ marginBottom: "1.5rem" }}>
+        <div className="panel-header">
+          <h3>Scheduled Reports</h3>
+        </div>
+        <div className="panel-body">
+          <div className="form-row" style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+            <input value={scheduleForm.name} onChange={(e) => setScheduleForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="Schedule name" />
+            <select value={scheduleForm.report_type} onChange={(e) => setScheduleForm((prev) => ({ ...prev, report_type: e.target.value }))}>
+              <option value="pipeline">Pipeline</option>
+              <option value="match_scores">Match Scores</option>
+              <option value="usage">Usage</option>
+            </select>
+            <select value={scheduleForm.format} onChange={(e) => setScheduleForm((prev) => ({ ...prev, format: e.target.value }))}>
+              <option value="json">JSON</option>
+              <option value="csv">CSV</option>
+              <option value="xlsx">XLSX</option>
+              <option value="pdf">PDF</option>
+            </select>
+            <select value={scheduleForm.cadence} onChange={(e) => setScheduleForm((prev) => ({ ...prev, cadence: e.target.value }))}>
+              <option value="manual">Manual</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            <select value={scheduleForm.delivery_channel} onChange={(e) => setScheduleForm((prev) => ({ ...prev, delivery_channel: e.target.value }))}>
+              <option value="in_app">In App</option>
+              <option value="email">Email</option>
+              <option value="both">Both</option>
+            </select>
+            <input
+              value={scheduleForm.recipient_email}
+              onChange={(e) => setScheduleForm((prev) => ({ ...prev, recipient_email: e.target.value }))}
+              placeholder="Recipient email (optional)"
+            />
+            <button className="btn-primary" onClick={handleCreateSchedule} disabled={savingSchedule}>
+              {savingSchedule ? "Saving..." : "Create Schedule"}
+            </button>
+          </div>
+          <div className="simple-list" style={{ marginTop: "1rem" }}>
+            {schedules.length === 0 ? (
+              <div className="empty-state">No scheduled reports yet.</div>
+            ) : (
+              schedules.map((schedule) => (
+                <div key={schedule.id} style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
+                  <div style={{ display: "grid", gap: "0.25rem" }}>
+                    <span>{schedule.name} - {schedule.cadence}</span>
+                    <small style={{ color: "var(--text-muted, #6b7280)" }}>
+                      Last run: {formatScheduleDate(schedule.last_run_at)} | Next run: {formatScheduleDate(schedule.next_run_at)}
+                    </small>
+                  </div>
+                  <button onClick={() => handleDeleteSchedule(schedule.id)}>Delete</button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 

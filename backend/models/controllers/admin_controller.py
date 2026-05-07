@@ -59,15 +59,18 @@ def get_audit_logs(
     # Build response with username lookup
     result = []
     for log in logs:
-        user = session.get(User, log.user_id)
+        user = session.get(User, log.user_id) if log.user_id else None
         result.append(AuditLogResponse(
             id=log.id,
             user_id=log.user_id,
-            username=user.username if user else f"User #{log.user_id}",
+            username=user.username if user else (log.actor_type or "system"),
+            actor_type=log.actor_type,
             action=log.action,
             entity_type=log.entity_type,
             entity_id=log.entity_id,
             details=log.details,
+            before_state=log.before_state,
+            after_state=log.after_state,
             timestamp=log.timestamp,
         ))
 

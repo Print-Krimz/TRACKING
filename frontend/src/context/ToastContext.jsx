@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Toast Notification Context
  *
  * Provides a global toast notification system.
@@ -53,7 +53,7 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="toast-container" aria-live="polite">
+      <div className="toast-container" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
           <div key={t.id} className={`toast toast-${t.type}`}>
             <div className="toast-icon">
@@ -108,7 +108,7 @@ export const ToastProvider = ({ children }) => {
               onClick={() => removeToast(t.id)}
               aria-label="Dismiss"
             >
-              ×
+              {"\u00D7"}
             </button>
           </div>
         ))}
@@ -118,3 +118,4 @@ export const ToastProvider = ({ children }) => {
 };
 
 export default ToastContext;
+

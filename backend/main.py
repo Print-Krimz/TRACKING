@@ -32,7 +32,11 @@ from sqlmodel import Session, select
 from database import (
     create_db_and_tables,
     ensure_application_status_enum_values,
+    ensure_automation_schema,
+    ensure_document_metadata_fields,
     ensure_deployment_contract_alert_schema,
+    ensure_talent_pool_fields,
+    ensure_user_lifecycle_fields,
     ensure_user_profile_fields,
     engine,
 )
@@ -42,6 +46,7 @@ from routes import (
     client_router, deployment_router, admin_router, talent_pool_router,
     interview_router, messaging_router, notification_router
 )
+from routes.automation_routes import router as automation_router
 from models.permission import Permission, RolePermissionLink
 from models.role import Role
 from models.job import JobRequisition, JobStatus
@@ -52,7 +57,12 @@ from models.application_message import ApplicationMessage, ApplicationMessageThr
 from models.application_interview import ApplicationInterview
 from models.notification import AppNotification
 from models.audit_log import AuditLog
+from models.automation_job import AutomationJob
+from models.report_schedule import ReportSchedule
 from services.deployment_contract_alert_service import run_contract_expiration_alert_job
+from services.automation_job_service import process_pending_automation_jobs
+from services.report_schedule_service import enqueue_due_report_schedules
+import services.automation_handlers  # noqa: F401 - registers automation handlers
 
 
 async def _contract_alert_scheduler() -> None:
@@ -83,6 +93,36 @@ async def _contract_alert_scheduler() -> None:
                 )
         except Exception as exc:
             print(f"Contract alert job failed: {exc}")
+
+
+async def _automation_job_scheduler() -> None:
+    """
+    Drain queued automation jobs and retries.
+    """
+    while True:
+        await asyncio.sleep(30)
+        try:
+            with Session(engine) as session:
+                processed = process_pending_automation_jobs(session, limit=10)
+            if processed:
+                print(f"Processed {len(processed)} automation job(s)")
+        except Exception as exc:
+            print(f"Automation job processor failed: {exc}")
+
+
+async def _report_schedule_scheduler() -> None:
+    """
+    Queue and execute due scheduled reports.
+    """
+    while True:
+        try:
+            with Session(engine) as session:
+                jobs = enqueue_due_report_schedules(session, limit=10)
+            if jobs:
+                print(f"Queued {len(jobs)} scheduled report job(s)")
+        except Exception as exc:
+            print(f"Scheduled report processor failed: {exc}")
+        await asyncio.sleep(60)
 
 
 def seed_roles_and_permissions(session: Session) -> None:
@@ -247,10 +287,14 @@ async def lifespan(app: FastAPI):
     print("Creating database tables...")
     create_db_and_tables()
     ensure_application_status_enum_values()
+    ensure_automation_schema()
     
     # Ensure deployment contract alert schema upgrades are applied
     ensure_deployment_contract_alert_schema()
+    ensure_talent_pool_fields()
+    ensure_document_metadata_fields()
     ensure_user_profile_fields()
+    ensure_user_lifecycle_fields()
 
     # Seed roles and permissions
     print("Seeding roles and permissions...")
@@ -270,6 +314,8 @@ async def lifespan(app: FastAPI):
     
     # Start scheduler and run a startup pass to avoid missing alerts.
     scheduler_task = asyncio.create_task(_contract_alert_scheduler())
+    automation_scheduler_task = asyncio.create_task(_automation_job_scheduler())
+    report_scheduler_task = asyncio.create_task(_report_schedule_scheduler())
     try:
         startup_result = run_contract_expiration_alert_job()
         if startup_result.get("ran"):
@@ -287,8 +333,18 @@ async def lifespan(app: FastAPI):
 
     # Shutdown: Cleanup if needed
     scheduler_task.cancel()
+    automation_scheduler_task.cancel()
+    report_scheduler_task.cancel()
     try:
         await scheduler_task
+    except asyncio.CancelledError:
+        pass
+    try:
+        await automation_scheduler_task
+    except asyncio.CancelledError:
+        pass
+    try:
+        await report_scheduler_task
     except asyncio.CancelledError:
         pass
     print("Shutting down application...")
@@ -362,6 +418,7 @@ app.include_router(talent_pool_router)    # /talent-pool/* routes
 app.include_router(interview_router)      # /interviews/* routes
 app.include_router(messaging_router)      # /messages/* routes
 app.include_router(notification_router)   # /notifications/* routes
+app.include_router(automation_router)     # /automation/* routes
 
 
 @app.get("/", tags=["Root"])

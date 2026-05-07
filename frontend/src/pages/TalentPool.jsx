@@ -13,6 +13,7 @@ import {
   rescanTalentPool,
   rescanTalentPoolEntry,
 } from "../services/api";
+import AnonymousName from "../components/AnonymousName";
 import "./TalentPool.css";
 
 const MATCH_FILTERS = [
@@ -140,7 +141,9 @@ const TalentPool = () => {
       setRescanningAll(true);
       const data = await rescanTalentPool();
       setEntries(Array.isArray(data?.entries) ? data.entries : []);
-      setSuccess(`Rescanned ${data.rescanned_count} talent pool entries`);
+      setSuccess(
+        `Rescanned ${data.rescanned_count} talent pool entries${data.skipped_count ? `, skipped ${data.skipped_count}` : ""}`,
+      );
       setTimeout(() => setSuccess(""), 2500);
     } catch (err) {
       setError(normalizeErrorMessage(err, "Failed to rescan talent pool"));
@@ -154,8 +157,22 @@ const TalentPool = () => {
       setRescanningId(entryId);
       const data = await rescanTalentPoolEntry(entryId);
       setEntries((prev) =>
-        prev.map((entry) => (entry.id === entryId ? data.entry : entry)),
+        prev.map((entry) =>
+          entry.id === entryId
+            ? {
+                ...data.entry,
+                last_rescan_delta: data.delta,
+                last_rescan_message: data.message,
+              }
+            : entry,
+        ),
       );
+      if (data?.delta) {
+        setSuccess(
+          `${data.delta.old_score ?? 0}% -> ${data.delta.new_score ?? 0}% (${data.delta.matched_jobs_delta >= 0 ? "+" : ""}${data.delta.matched_jobs_delta} matches)`,
+        );
+        setTimeout(() => setSuccess(""), 2500);
+      }
     } catch (err) {
       setError(normalizeErrorMessage(err, "Failed to rescan candidate"));
     } finally {
@@ -279,7 +296,7 @@ const TalentPool = () => {
           {filteredEntries.map((entry) => (
             <div key={entry.id} className="table-row talent-pool-entry">
               <div className="candidate-cell">
-                <strong>{entry.candidate_name}</strong>
+                <AnonymousName name={entry.candidate_name} id={entry.candidate_id} />
                 <span>ID #{entry.candidate_id}</span>
               </div>
 
@@ -299,6 +316,11 @@ const TalentPool = () => {
                 {entry.best_match_score != null && (
                   <span className={`score-badge ${getScoreTone(entry.best_match_score)}`}>
                     {entry.best_match_score}%
+                  </span>
+                )}
+                {entry.last_rescan_delta && (
+                  <span className="match-delta">
+                    {entry.last_rescan_delta.old_score ?? 0}% {"->"} {entry.last_rescan_delta.new_score ?? 0}%
                   </span>
                 )}
               </div>

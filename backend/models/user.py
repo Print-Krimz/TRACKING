@@ -10,6 +10,7 @@ Security Considerations:
 - The hashed_password field should never be returned in API responses
 """
 
+from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -67,6 +68,30 @@ class User(SQLModel, table=True):
     professional_summary: Optional[str] = Field(default=None, max_length=2000)
     hashed_password: str = Field(
         description="bcrypt-hashed password - NEVER store or return plain text"
+    )
+    status: str = Field(
+        default="active",
+        max_length=20,
+        index=True,
+        description="Lifecycle status: active or archived"
+    )
+    archived_at: Optional[datetime] = Field(
+        default=None,
+        description="Timestamp when account was archived"
+    )
+    archived_by_user_id: Optional[int] = Field(
+        default=None,
+        foreign_key="user.id",
+        description="Admin user id that archived this account"
+    )
+    archive_reason: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Reason provided when account was archived"
+    )
+    deleted_at: Optional[datetime] = Field(
+        default=None,
+        description="Timestamp when delete was attempted/completed"
     )
     
     # Foreign key to Role table

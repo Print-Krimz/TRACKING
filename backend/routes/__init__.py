@@ -19,6 +19,7 @@ from routes.talent_pool_routes import router as talent_pool_router
 from routes.interview_routes import router as interview_router
 from routes.messaging_routes import router as messaging_router
 from routes.notification_routes import router as notification_router
+from routes.automation_routes import router as automation_router
 
 __all__ = [
     "auth_router", "user_router", "roles_router", 
@@ -26,7 +27,7 @@ __all__ = [
     "analytics_router", "matching_router", "document_router",
     "client_router", "deployment_router", "admin_router",
     "talent_pool_router", "interview_router", "messaging_router",
-    "notification_router",
+    "notification_router", "automation_router",
 ]
 
 

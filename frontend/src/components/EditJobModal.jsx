@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { updateJob } from "../services/api";
+import { assistJobDraft, updateJob } from "../services/api";
 import { FileText, GraduationCap, Target, AlertTriangle } from "lucide-react";
 import "./EditJobModal.css";
 
 const EditJobModal = ({ job, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
@@ -59,6 +60,38 @@ const EditJobModal = ({ job, onClose, onSuccess }) => {
     setCriteria(newCriteria);
   };
 
+  const handleGenerateDraft = async () => {
+    setError("");
+    setDraftLoading(true);
+    try {
+      const draft = await assistJobDraft({
+        title: formData.title,
+        description_text: formData.description,
+        target_role: formData.department || formData.title,
+      });
+      const confirmed = window.confirm("Apply the generated draft to this job?");
+      if (!confirmed) return;
+
+      setFormData((prev) => ({
+        ...prev,
+        title: draft.title || prev.title,
+        description: draft.description || prev.description,
+        department: draft.department || prev.department,
+        location: draft.location || prev.location,
+        employment_type: draft.employment_type || prev.employment_type,
+        experience_years: draft.experience_years ?? prev.experience_years,
+        education_level: draft.education_level || prev.education_level,
+        salary_min: draft.salary_min ?? prev.salary_min,
+        salary_max: draft.salary_max ?? prev.salary_max,
+      }));
+      setCriteria(draft.criteria || []);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to generate draft.");
+    } finally {
+      setDraftLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -90,9 +123,14 @@ const EditJobModal = ({ job, onClose, onSuccess }) => {
       <div className="edit-job-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Edit Job Requisition</h2>
-          <button className="close-btn" onClick={onClose}>
-            &times;
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <button className="secondary-btn" onClick={handleGenerateDraft} disabled={draftLoading} type="button">
+              {draftLoading ? "Generating..." : "Generate Draft"}
+            </button>
+            <button className="close-btn" onClick={onClose} type="button">
+              &times;
+            </button>
+          </div>
         </div>
 
         <div className="modal-content">

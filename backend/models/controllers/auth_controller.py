@@ -124,6 +124,9 @@ def authenticate_user(session: Session, username: str, password: str) -> Optiona
     if not user:
         # User not found - but we don't reveal this to prevent enumeration
         return None
+
+    if (user.status or "active") != "active":
+        return None
     
     # Verify the password using bcrypt
     if not verify_password(password, user.hashed_password):

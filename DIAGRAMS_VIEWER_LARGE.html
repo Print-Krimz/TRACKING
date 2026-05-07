@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Diagrams - Large View</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --ink: #0f172a;
+        --muted: #475569;
+        --border: #dbeafe;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+
+      .wrap {
+        max-width: 1800px;
+        margin: 24px auto 60px;
+        padding: 0 18px;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 2rem;
+      }
+
+      .hint {
+        color: var(--muted);
+        margin: 0 0 18px;
+        font-size: 1rem;
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        margin: 20px 0;
+      }
+
+      .panel h2 {
+        margin: 0 0 12px;
+        font-size: 1.35rem;
+      }
+
+      .mermaid {
+        text-align: center;
+      }
+
+      .mermaid svg {
+        width: min(1700px, 98vw) !important;
+        height: auto !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>System Diagrams (Large View)</h1>
+      <p class="hint">Tip: Use browser zoom (<strong>Ctrl + +</strong>) for even larger view.</p>
+
+      <section class="panel">
+        <h2>1) Process Visualization</h2>
+        <div class="mermaid">
+stateDiagram-v2
+    [*] --> Login
+    Login --> Authenticated: valid credentials
+    Login --> AccessDenied: invalid credentials
+    AccessDenied --> [*]
+
+    Authenticated --> ApplicantLane: role = Applicant
+    Authenticated --> RecruiterLane: role = Recruiter
+    Authenticated --> AdminLane: role = Admin
+
+    state ApplicantLane {
+      [*] --> SubmitResume
+      SubmitResume --> ResumeValidated: valid PDF/DOCX/text
+      SubmitResume --> ResumeRejected: invalid input
+      ResumeRejected --> SubmitResume
+      ResumeValidated --> ApplyToOpenJob
+      ApplyToOpenJob --> ApplicationCreated: quiz passed + checks passed
+      ApplyToOpenJob --> ApplicationBlocked: duplicate/closed/failed quiz
+      ApplicationBlocked --> [*]
+    }
+
+    ApplicationCreated --> RecruiterLane
+
+    state RecruiterLane {
+      [*] --> ReviewApplication
+      ReviewApplication --> AnalyzeResume: analysis requested
+      AnalyzeResume --> AnonymizePII
+      AnonymizePII --> GeminiAssessment
+      GeminiAssessment --> ReviewApplication
+      ReviewApplication --> Screening
+      Screening --> Interview
+      Interview --> Offer
+      Offer --> Deployed
+      Offer --> Hired
+      Screening --> Rejected
+      Screening --> Withdrawn
+      Interview --> Rejected
+      Interview --> Withdrawn
+      Deployed --> Finalized
+      Hired --> Finalized
+      Rejected --> Finalized
+      Withdrawn --> Finalized
+    }
+
+    state AdminLane {
+      [*] --> ManageUsers
+      ManageUsers --> ManageRoles
+      ManageRoles --> ViewAuditLogs
+      ViewAuditLogs --> ViewSystemStats
+      ViewSystemStats --> [*]
+    }
+
+    Finalized --> DashboardUpdated
+    DashboardUpdated --> [*]
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>2) Context Flow Diagram</h2>
+        <div class="mermaid">
+flowchart LR
+    APP[Applicant / Candidate]
+    REC[Recruiter]
+    INT[Interviewer]
+    ADM[Admin]
+    AI[Gemini AI Service]
+    DB[(PostgreSQL Database)]
+    NOTIF[Notification Channel]
+    SYS[[RBAC Resume Application System]]
+
+    APP -->|Register, login, resume upload, quiz answers, job applications| SYS
+    SYS -->|Application status, interview timeline, messages| APP
+
+    REC -->|Create/manage jobs, request AI analysis, update status, shortlist| SYS
+    SYS -->|Candidate pipeline, match insights, analytics data| REC
+
+    INT -->|Interview outcome notes| SYS
+    SYS -->|Interview assignments and schedules| INT
+
+    ADM -->|User/role management actions, policy updates| SYS
+    SYS -->|Audit logs, system stats, governance views| ADM
+
+    SYS -->|Anonymized resume text + analysis prompts| AI
+    AI -->|Resume score, strengths, weaknesses, recommendations| SYS
+
+    SYS <--> |Users, resumes, jobs, applications, interviews, notifications| DB
+    SYS -->|In-app alerts, interview invites, workflow updates| NOTIF
+
+    classDef entity fill:#fde68a,stroke:#92400e,color:#0f172a,stroke-width:1px;
+    classDef system fill:#bfdbfe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef external fill:#ddd6fe,stroke:#5b21b6,color:#0f172a,stroke-width:1px;
+    classDef datastore fill:#bbf7d0,stroke:#166534,color:#0f172a,stroke-width:1px;
+
+    class APP,REC,INT,ADM entity;
+    class SYS system;
+    class AI,NOTIF external;
+    class DB datastore;
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>3) Cumulative Flow Diagram</h2>
+        <div class="mermaid">
+%%{init: {'theme':'base','themeVariables': {'xyChart': {'plotColorPalette': '#60A5FA, #F59E0B, #10B981'}}}}%%
+xychart-beta
+    title "Cumulative Flow - Hiring Pipeline Throughput"
+    x-axis ["W1","W2","W3","W4","W5","W6","W7","W8"]
+    y-axis "Cumulative Item Count" 0 --> 80
+    line [14,22,33,43,54,60,66,72]
+    line [3,8,15,24,34,45,56,65]
+    line [0,2,6,12,20,31,43,58]
+        </div>
+      </section>
+    </div>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "base",
+        flowchart: { useMaxWidth: false },
+        securityLevel: "loose",
+      });
+    </script>
+  </body>
+</html>

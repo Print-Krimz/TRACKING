@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { uploadDocument, getDocuments, downloadDocument, deleteDocument } from "../services/api";
+import { uploadDocument, getDocuments, downloadDocument, deleteDocument, updateDocumentMetadata } from "../services/api";
 import { Download, FolderOpen, IdCard, FileSignature, FileText, Trash2, UploadCloud } from "lucide-react";
 import { EmptyState } from "../components/ui";
 import "./DocumentVault.css";
@@ -12,6 +12,7 @@ const DocumentVault = () => {
   
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastSuggestion, setLastSuggestion] = useState(null);
   
   // Upload state
   const [file, setFile] = useState(null);
@@ -51,8 +52,9 @@ const DocumentVault = () => {
     try {
       setUploading(true);
       const expDate = expirationDate ? new Date(expirationDate).toISOString() : null;
-      await uploadDocument(file, docType, expDate);
+      const uploaded = await uploadDocument(file, docType, expDate);
       addToast("success", `${docType} uploaded successfully`);
+      setLastSuggestion(uploaded);
       
       // Reset form
       setFile(null);
@@ -99,6 +101,20 @@ const DocumentVault = () => {
       await fetchDocuments();
     } catch (err) {
       addToast("error", "Failed to delete document");
+    }
+  };
+
+  const handleConfirmSuggestion = async (doc) => {
+    try {
+      await updateDocumentMetadata(doc.id, {
+        document_type: doc.document_type_candidate || doc.document_type,
+        expiration_date: doc.expiration_date_candidate || doc.expiration_date,
+      });
+      addToast("success", "Document metadata confirmed");
+      setLastSuggestion(null);
+      await fetchDocuments();
+    } catch {
+      addToast("error", "Failed to confirm suggested metadata");
     }
   };
 
@@ -178,6 +194,19 @@ const DocumentVault = () => {
             </button>
           </form>
         </div>
+
+        {lastSuggestion && !lastSuggestion.metadata_confirmed && (
+          <div className="vault-upload-card">
+            <h3>Suggested Metadata</h3>
+            <p>{lastSuggestion.document_type_candidate || lastSuggestion.document_type}</p>
+            <p>
+              Confidence: {Math.round((lastSuggestion.extraction_confidence || 0) * 100)}%
+            </p>
+            <button className="vault-btn primary" onClick={() => handleConfirmSuggestion(lastSuggestion)}>
+              Confirm Suggested Metadata
+            </button>
+          </div>
+        )}
 
         <div className="vault-list-card">
           <h3>My Uploaded Documents</h3>

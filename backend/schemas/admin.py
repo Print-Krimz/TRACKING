@@ -5,12 +5,15 @@ from datetime import datetime
 
 class AuditLogResponse(BaseModel):
     id: int
-    user_id: int
+    user_id: Optional[int] = None
     username: str
+    actor_type: str = "user"
     action: str
     entity_type: str
     entity_id: Optional[int] = None
     details: Optional[str] = None
+    before_state: Optional[str] = None
+    after_state: Optional[str] = None
     timestamp: datetime
 
     class Config:

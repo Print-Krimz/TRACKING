@@ -44,10 +44,10 @@ const STATUS_OPTIONS = [
 const SORT_OPTIONS = [
   { value: "applied_desc", label: "Newest First" },
   { value: "applied_asc", label: "Oldest First" },
-  { value: "name_asc", label: "Name A→Z" },
-  { value: "name_desc", label: "Name Z→A" },
+  { value: "name_asc", label: "Name A->Z" },
+  { value: "name_desc", label: "Name Z->A" },
   { value: "score_desc", label: "Highest Score" },
-  { value: "job_asc", label: "Job Title A→Z" },
+  { value: "job_asc", label: "Job Title A->Z" },
 ];
 
 const AllApplicants = () => {
@@ -302,7 +302,7 @@ const AllApplicants = () => {
     <div className="all-applicants-page">
       {/* Header */}
       <div className="page-header">
-        <div className="header-left">
+        <div className="page-title-group">
           <button className="back-btn" onClick={() => navigate("/recruiter")}>
             <svg viewBox="0 0 24 24" fill="none">
               <path
@@ -315,11 +315,13 @@ const AllApplicants = () => {
             </svg>
             Dashboard
           </button>
-          <h1>All Applicants</h1>
-          <p className="subtitle">
+          <div className="title-row">
+            <h1>All Applicants</h1>
+            <p className="subtitle">
             Showing {filteredApps.length} of {applications.length} applicant
             {applications.length !== 1 ? "s" : ""}
           </p>
+          </div>
         </div>
         <div className="header-actions">
           <button
@@ -336,10 +338,11 @@ const AllApplicants = () => {
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button onClick={() => setError("")}>×</button>
+          <button onClick={() => setError("")} aria-label="Dismiss error">
+            x
+          </button>
         </div>
       )}
-
       {/* Toolbar: Search + Filters + Sort */}
       <div className="toolbar">
         <div className="search-box">
@@ -367,7 +370,7 @@ const AllApplicants = () => {
           />
           {searchTerm && (
             <button className="clear-search" onClick={() => setSearchTerm("")}>
-              ×
+              x
             </button>
           )}
         </div>
@@ -454,6 +457,7 @@ const AllApplicants = () => {
         </div>
       ) : (
         <>
+        <div className="table-scroll">
         <div className="applicants-table">
           {/* Table header */}
           <div className="table-row table-header">
@@ -470,11 +474,13 @@ const AllApplicants = () => {
             <div key={app.id} className="table-row">
               {/* Applicant */}
               <div className="col-applicant">
-                <AnonymousName
-                  name={app.candidate_name}
-                  id={app.candidate_id}
-                />
-                <span className="id-tag">ID #{app.candidate_id}</span>
+                <div className="applicant-meta">
+                  <AnonymousName
+                    name={app.candidate_name}
+                    id={app.candidate_id}
+                  />
+                  <span className="id-tag">ID #{app.candidate_id}</span>
+                </div>
               </div>
 
               {/* Job Applied To — prominent display */}
@@ -663,6 +669,7 @@ const AllApplicants = () => {
               </div>
             </div>
           ))}
+        </div>
         </div>
           
           {/* Pagination Controls */}

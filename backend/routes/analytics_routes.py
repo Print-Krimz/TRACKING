@@ -4,6 +4,7 @@ Analytics Routes
 API endpoints for recruiter analytics and metrics.
 """
 
+import json
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select, func
@@ -14,6 +15,12 @@ from dependencies import check_permissions
 from models.user import User
 from models.job import JobRequisition, JobStatus
 from models.application import Application, ApplicationStatus
+from models.report_schedule import ReportSchedule
+from schemas.automation import (
+    ReportScheduleCreateRequest,
+    ReportScheduleListResponse,
+    ReportScheduleResponse,
+)
 from schemas.report import ReportRequest
 
 
@@ -22,6 +29,38 @@ router = APIRouter(
     tags=["Analytics"],
     responses={401: {"description": "Not authenticated"}}
 )
+
+
+def _schedule_to_response(schedule: ReportSchedule) -> ReportScheduleResponse:
+    return ReportScheduleResponse(
+        id=schedule.id,
+        name=schedule.name,
+        report_type=schedule.report_type,
+        format=schedule.format,
+        cadence=schedule.cadence,
+        job_id=schedule.job_id,
+        date_from=schedule.date_from,
+        date_to=schedule.date_to,
+        delivery_channel=schedule.delivery_channel,
+        recipient_email=schedule.recipient_email,
+        config=json.loads(schedule.config_json or "{}"),
+        is_active=schedule.is_active,
+        last_run_at=schedule.last_run_at,
+        next_run_at=schedule.next_run_at,
+        created_at=schedule.created_at,
+        updated_at=schedule.updated_at,
+    )
+
+
+def _next_run_at(cadence: str) -> Optional[datetime]:
+    now = datetime.utcnow()
+    if cadence == "daily":
+        return now + timedelta(days=1)
+    if cadence == "weekly":
+        return now + timedelta(days=7)
+    if cadence == "monthly":
+        return now + timedelta(days=30)
+    return None
 
 
 @router.get(
@@ -473,4 +512,88 @@ def generate_report(
             "Content-Disposition": f'attachment; filename="{filename}"',
         },
     )
+
+
+@router.post(
+    "/reports/schedules",
+    response_model=ReportScheduleResponse,
+    summary="Create a report schedule",
+    description="Store a reusable scheduled report definition.",
+)
+def create_report_schedule(
+    request: ReportScheduleCreateRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("view_analytics")),
+):
+    from fastapi import HTTPException
+    from services.report_service import REPORT_GENERATORS
+
+    valid_formats = ["json", "csv", "xlsx", "pdf"]
+    valid_cadences = ["manual", "daily", "weekly", "monthly"]
+    valid_delivery_channels = ["in_app", "email", "both"]
+
+    if request.report_type not in REPORT_GENERATORS:
+        raise HTTPException(status_code=400, detail=f"Invalid report type: '{request.report_type}'")
+    if request.format not in valid_formats:
+        raise HTTPException(status_code=400, detail=f"Invalid format: '{request.format}'")
+    if request.cadence not in valid_cadences:
+        raise HTTPException(status_code=400, detail=f"Invalid cadence: '{request.cadence}'")
+    if request.delivery_channel not in valid_delivery_channels:
+        raise HTTPException(status_code=400, detail=f"Invalid delivery channel: '{request.delivery_channel}'")
+
+    schedule = ReportSchedule(
+        name=request.name,
+        report_type=request.report_type,
+        format=request.format,
+        cadence=request.cadence,
+        job_id=request.job_id,
+        date_from=request.date_from,
+        date_to=request.date_to,
+        delivery_channel=request.delivery_channel,
+        recipient_email=request.recipient_email,
+        created_by_user_id=current_user.id,
+        config_json=json.dumps(request.config or {}),
+        next_run_at=_next_run_at(request.cadence),
+    )
+    session.add(schedule)
+    session.commit()
+    session.refresh(schedule)
+    return _schedule_to_response(schedule)
+
+
+@router.get(
+    "/reports/schedules",
+    response_model=ReportScheduleListResponse,
+    summary="List report schedules",
+)
+def list_report_schedules(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("view_analytics")),
+):
+    schedules = session.exec(
+        select(ReportSchedule).order_by(ReportSchedule.created_at.desc())
+    ).all()
+    return ReportScheduleListResponse(
+        schedules=[_schedule_to_response(schedule) for schedule in schedules],
+        total=len(schedules),
+    )
+
+
+@router.delete(
+    "/reports/schedules/{schedule_id}",
+    status_code=204,
+    summary="Delete a report schedule",
+)
+def delete_report_schedule(
+    schedule_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("view_analytics")),
+):
+    schedule = session.get(ReportSchedule, schedule_id)
+    if not schedule:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Report schedule not found")
+    session.delete(schedule)
+    session.commit()
 

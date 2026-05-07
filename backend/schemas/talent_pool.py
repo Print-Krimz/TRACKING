@@ -46,6 +46,15 @@ class TalentPoolEntryResponse(BaseModel):
         from_attributes = True
 
 
+class TalentPoolRescanDelta(BaseModel):
+    """Score delta returned from a talent pool rescan."""
+
+    old_score: Optional[int] = None
+    new_score: Optional[int] = None
+    matched_jobs_delta: int = 0
+    trigger_type: str = "manual"
+
+
 class TalentPoolSaveResponse(BaseModel):
     """Save result for a talent pool action."""
 
@@ -67,6 +76,9 @@ class TalentPoolRescanResponse(BaseModel):
     """Result of rescanning one talent pool entry."""
 
     entry: TalentPoolEntryResponse
+    delta: TalentPoolRescanDelta
+    skipped: bool = False
+    message: Optional[str] = None
 
 
 class TalentPoolBulkRescanResponse(BaseModel):
@@ -74,4 +86,6 @@ class TalentPoolBulkRescanResponse(BaseModel):
 
     rescanned_count: int
     matched_entries: int
+    skipped_count: int = 0
     entries: List[TalentPoolEntryResponse]
+    deltas: List[TalentPoolRescanDelta] = []

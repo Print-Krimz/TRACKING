@@ -250,7 +250,7 @@
 .deploy-search svg {
   width: 16px;
   height: 16px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
@@ -289,7 +289,7 @@
   padding: var(--space-3) var(--space-4);
   font-size: var(--font-xs);
   font-weight: var(--weight-semibold);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--surface-border);
@@ -318,7 +318,7 @@
 .table-empty {
   text-align: center;
   padding: var(--space-12) var(--space-4) !important;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .loading-pulse {
@@ -380,7 +380,7 @@
 
 .client-location {
   font-size: var(--font-xs);
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 /* Status Pills */
@@ -430,7 +430,7 @@
 }
 
 /* Contract Countdown */
-.countdown-na      { color: var(--text-muted); font-size: var(--font-sm); }
+.countdown-na      { color: var(--text-secondary); font-size: var(--font-sm); }
 .countdown-expired { color: var(--error-400); font-weight: var(--weight-semibold); font-size: var(--font-sm); }
 .countdown-warning { color: var(--warning-400); font-weight: var(--weight-semibold); font-size: var(--font-sm); }
 .countdown-ok      { color: var(--success-400); font-size: var(--font-sm); }
@@ -508,7 +508,7 @@
 
 .client-loc-badge {
   font-size: var(--font-xs);
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .client-card-body {
@@ -529,7 +529,7 @@
 
 .contact-label {
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .contact-value {
@@ -580,7 +580,7 @@
 }
 
 .empty-state-full p {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   margin: var(--space-4) 0;
 }
 

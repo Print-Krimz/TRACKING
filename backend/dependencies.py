@@ -215,6 +215,13 @@ async def get_current_user(
     
     if user is None:
         raise credentials_exception
+
+    if (user.status or "active") != "active":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account is archived. Contact an administrator.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     return user
 

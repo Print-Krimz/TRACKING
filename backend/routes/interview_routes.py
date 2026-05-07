@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Optional
 
@@ -14,8 +15,15 @@ from models.application_interview import (
 )
 from models.notification import NotificationType
 from models.user import User
+from schemas.automation import (
+    InterviewInviteRequest,
+    InterviewInviteResponse,
+    InterviewSlotSuggestionRequest,
+)
 from schemas.interview import InterviewListResponse, InterviewResponse, InterviewUpdateRequest
 from services.audit_service import log_audit
+from services.automation_flags import is_automation_enabled
+from services.automation_job_service import enqueue_automation_job
 from services.notification_service import create_notification
 
 router = APIRouter(
@@ -23,6 +31,52 @@ router = APIRouter(
     tags=["Interviews"],
     responses={401: {"description": "Not authenticated"}},
 )
+
+
+@router.post("/suggest-slots")
+def suggest_slots(
+    request: InterviewSlotSuggestionRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("manage_applications")),
+):
+    if not is_automation_enabled("interview_assist"):
+        raise HTTPException(status_code=503, detail="Interview assist is disabled.")
+
+    job = enqueue_automation_job(
+        session=session,
+        job_type="interview_suggest_slots",
+        payload=request.model_dump(),
+        actor_user_id=current_user.id,
+        idempotency_key=json.dumps(request.model_dump(), sort_keys=True),
+    )
+    if not job.result_json:
+        raise HTTPException(status_code=400, detail=job.error_message or "Failed to suggest interview slots.")
+    return json.loads(job.result_json or "{}")
+
+
+@router.post("/{interview_id}/send-invite", response_model=InterviewInviteResponse)
+def send_invite(
+    interview_id: int,
+    request: InterviewInviteRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(check_permissions("manage_applications")),
+):
+    if not is_automation_enabled("interview_assist"):
+        raise HTTPException(status_code=503, detail="Interview assist is disabled.")
+
+    job = enqueue_automation_job(
+        session=session,
+        job_type="interview_send_invite",
+        payload={"interview_id": interview_id, **request.model_dump()},
+        actor_user_id=current_user.id,
+        idempotency_key=json.dumps({"interview_id": interview_id, **request.model_dump()}, sort_keys=True),
+    )
+    if not job.result_json:
+        raise HTTPException(status_code=400, detail=job.error_message or "Failed to send interview invite.")
+    result = json.loads(job.result_json or "{}")
+    if result.get("error"):
+        raise HTTPException(status_code=404 if "not found" in result["error"].lower() else 400, detail=result["error"])
+    return InterviewInviteResponse(**result)
 
 
 @router.patch("/{interview_id}", response_model=InterviewResponse)

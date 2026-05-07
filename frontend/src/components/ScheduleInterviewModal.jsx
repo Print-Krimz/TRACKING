@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createInterview } from "../services/api";
+import { createInterview, suggestInterviewSlots } from "../services/api";
 import "./ScheduleInterviewModal.css";
 
 const ScheduleInterviewModal = ({ application, onClose, onScheduled }) => {
@@ -12,9 +12,30 @@ const ScheduleInterviewModal = ({ application, onClose, onScheduled }) => {
     notes: "",
   });
   const [loading, setLoading] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
 
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSuggest = async () => {
+    try {
+      setSuggesting(true);
+      setError("");
+      const data = await suggestInterviewSlots({
+        application_id: application.id,
+        timezone: form.timezone,
+        duration_minutes: 60,
+        window_days: 5,
+        slot_count: 3,
+      });
+      setSuggestions(data.slots || []);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to suggest interview times.");
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -41,7 +62,26 @@ const ScheduleInterviewModal = ({ application, onClose, onScheduled }) => {
       <div className="iv-modal" onClick={(e) => e.stopPropagation()}>
         <h3>Schedule Interview</h3>
         <p>{application?.candidate_name} - {application?.job_title}</p>
+        <button type="button" onClick={handleSuggest} disabled={suggesting}>
+          {suggesting ? "Suggesting..." : "Suggest Times"}
+        </button>
         {error && <div className="iv-error">{error}</div>}
+        {suggestions.length > 0 && (
+          <div className="iv-suggestions">
+            {suggestions.map((slot) => (
+              <button
+                type="button"
+                key={slot.scheduled_start_at}
+                onClick={() => {
+                  update("scheduled_start_at", slot.scheduled_start_at.slice(0, 16));
+                  update("scheduled_end_at", slot.scheduled_end_at.slice(0, 16));
+                }}
+              >
+                {slot.label}
+              </button>
+            ))}
+          </div>
+        )}
         <form onSubmit={submit}>
           <label>Start</label>
           <input
@@ -56,6 +96,12 @@ const ScheduleInterviewModal = ({ application, onClose, onScheduled }) => {
             required
             value={form.scheduled_end_at}
             onChange={(e) => update("scheduled_end_at", e.target.value)}
+          />
+          <label>Timezone</label>
+          <input
+            value={form.timezone}
+            onChange={(e) => update("timezone", e.target.value)}
+            placeholder="UTC"
           />
           <label>Mode</label>
           <select value={form.mode} onChange={(e) => update("mode", e.target.value)}>

@@ -15,6 +15,9 @@ import {
   getJobs,
   getSkillDistribution,
   getUpcomingInterviews,
+  bulkUpdateApplicationStatus,
+  bulkUpdateApplicationShortlist,
+  sendInterviewInvite,
   updateApplicationStatus,
 } from "../services/api";
 import { Users, FileText, DatabaseZap } from "lucide-react";
@@ -36,6 +39,7 @@ const RecruiterDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [skillData, setSkillData] = useState([]);
   const [updatingAppId, setUpdatingAppId] = useState(null);
   const [selectedJobId, setSelectedJobId] = useState("");
@@ -43,6 +47,7 @@ const RecruiterDashboard = () => {
   const [selectedAppIds, setSelectedAppIds] = useState([]);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [upcomingInterviews, setUpcomingInterviews] = useState([]);
+  const [sendingInviteId, setSendingInviteId] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -111,20 +116,24 @@ const RecruiterDashboard = () => {
 
     setIsBulkUpdating(true);
     try {
-      await Promise.all(
-        selectedAppIds.map((appId) =>
-          updateApplicationStatus(appId, newStatus),
-        ),
-      );
+      const result = await bulkUpdateApplicationStatus(selectedAppIds, newStatus);
 
       // Optimistically update local state
       setApplications((prevApps) =>
         prevApps.map((a) =>
-          selectedAppIds.includes(a.id) ? { ...a, status: newStatus } : a,
+          result?.results?.some((item) => item.application_id === a.id && item.success)
+            ? { ...a, status: newStatus }
+            : a,
         ),
       );
 
       setSelectedAppIds([]);
+
+      if (result?.failed) {
+        setError(
+          `Updated ${result.succeeded}/${result.total} applications. ${result.failed} failed.`,
+        );
+      }
 
       const newOverview = await getAnalyticsOverview().catch(() => null);
       if (newOverview) setOverview(newOverview);
@@ -137,9 +146,80 @@ const RecruiterDashboard = () => {
     }
   };
 
-  const getApplicationsByStatus = (status) => {
-    return applications.filter((app) => app.status === status);
+  const handleBulkShortlist = async (shortlisted) => {
+    if (selectedAppIds.length === 0) return;
+
+    setIsBulkUpdating(true);
+    try {
+      const result = await bulkUpdateApplicationShortlist(
+        selectedAppIds,
+        shortlisted,
+      );
+
+      setApplications((prevApps) =>
+        prevApps.map((a) =>
+          result?.results?.some((item) => item.application_id === a.id && item.success)
+            ? { ...a, is_shortlisted: shortlisted }
+            : a,
+        ),
+      );
+      setSelectedAppIds([]);
+
+      if (result?.failed) {
+        setError(
+          `Updated ${result.succeeded}/${result.total} applications. ${result.failed} failed.`,
+        );
+      }
+    } catch (err) {
+      setError("Failed to update shortlist state.");
+    } finally {
+      setIsBulkUpdating(false);
+    }
   };
+
+  const handleSendInvite = async (interview) => {
+    try {
+      setSendingInviteId(interview.id);
+      setError("");
+      await sendInterviewInvite(interview.id, {
+        template: "Standard interview invite",
+      });
+      setSuccess(`Invite sent for application #${interview.application_id}`);
+      setTimeout(() => setSuccess(""), 2500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to send interview invite");
+    } finally {
+      setSendingInviteId(null);
+    }
+  };
+
+  const applicationsByStatus = STATUS_COLUMNS.reduce((acc, column) => {
+    acc[column.key] = applications.filter((app) => app.status === column.key);
+    return acc;
+  }, {});
+
+  const stageSummary = STATUS_COLUMNS.map((column) => ({
+    ...column,
+    count: applicationsByStatus[column.key]?.length || 0,
+  }));
+
+  const busiestStage =
+    stageSummary.reduce(
+      (top, stage) => (stage.count > top.count ? stage : top),
+      stageSummary[0] || { label: "New", count: 0 },
+    ) || { label: "New", count: 0 };
+
+  const openJobsCount =
+    overview?.open_jobs ?? jobs.filter((job) => job.status === "open").length;
+
+  const totalPipelineCandidates = stageSummary.reduce(
+    (sum, stage) => sum + stage.count,
+    0,
+  );
+
+  const selectedJobTitle = selectedJobId
+    ? jobs.find((job) => job.id === Number(selectedJobId))?.title || "Unknown Job"
+    : "All Open Jobs";
 
   if (loading) {
     return (
@@ -155,15 +235,32 @@ const RecruiterDashboard = () => {
   return (
     <div className="recruiter-dashboard">
       <div className="dashboard-header">
-        <div className="header-left">
+        <div className="dashboard-hero-left">
+          <span className="dashboard-kicker">Recruiter Workspace</span>
           <h1>Dashboard</h1>
           <p>
             {selectedJobId
-              ? `Viewing metrics for: ${jobs.find((j) => j.id === parseInt(selectedJobId))?.title || "Unknown Job"}`
+              ? `Viewing metrics for: ${selectedJobTitle}`
               : "Manage your hiring pipeline"}
           </p>
+          <div className="header-insights">
+            <div className="header-insight">
+              <span>Scope</span>
+              <strong>{selectedJobTitle}</strong>
+            </div>
+            <div className="header-insight">
+              <span>Active Pipeline</span>
+              <strong>{totalPipelineCandidates} candidates</strong>
+            </div>
+            <div className="header-insight">
+              <span>Busiest Stage</span>
+              <strong>
+                {busiestStage.label} ({busiestStage.count})
+              </strong>
+            </div>
+          </div>
         </div>
-        <div className="header-actions">
+        <div className="dashboard-hero-actions">
           <div className="global-filter">
             <select
               value={selectedJobId}
@@ -206,7 +303,9 @@ const RecruiterDashboard = () => {
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button onClick={() => setError("")}>×</button>
+          <button onClick={() => setError("")} aria-label="Dismiss error">
+            x
+          </button>
         </div>
       )}
 
@@ -228,10 +327,7 @@ const RecruiterDashboard = () => {
             </svg>
           </div>
           <div className="metric-content">
-            <span className="metric-value">
-              {overview?.open_jobs ??
-                jobs.filter((j) => j.status === "open").length}
-            </span>
+            <span className="metric-value">{openJobsCount}</span>
             <span className="metric-label">Open Jobs</span>
           </div>
         </div>
@@ -324,112 +420,144 @@ const RecruiterDashboard = () => {
           </div>
         </div>
       </div>
-      <div className="pipeline-section" style={{ marginTop: "20px" }}>
-        <h2>Upcoming Interviews</h2>
+      <div className="pipeline-section upcoming-section">
+        <div className="section-heading-row">
+          <h2>Upcoming Interviews</h2>
+          <span className="section-chip">
+            {upcomingInterviews.length} scheduled
+          </span>
+        </div>
         {upcomingInterviews.length === 0 ? (
           <p className="pipeline-hint">No upcoming interviews.</p>
         ) : (
-          <div className="kanban-board">
+          <div className="upcoming-grid">
             {upcomingInterviews.slice(0, 6).map((interview) => (
-              <div key={interview.id} className="kanban-card">
-                <div className="card-title">Application #{interview.application_id}</div>
-                <div className="card-meta">
+              <div key={interview.id} className="upcoming-card">
+                <div className="upcoming-card-header">
+                  <div className="card-title">
+                    Application #{interview.application_id}
+                  </div>
+                  <span className="upcoming-mode">
+                    {interview.mode || "unspecified"}
+                  </span>
+                </div>
+                <div className="upcoming-date">
                   {new Date(interview.scheduled_start_at).toLocaleString()}
                 </div>
-                <div className="card-job">
-                  {interview.mode} • {interview.status.replace("_", " ")}
+                <div className="upcoming-status">
+                  {interview.status.replace("_", " ")}
                 </div>
+                <button
+                  className="invite-btn"
+                  onClick={() => handleSendInvite(interview)}
+                  disabled={sendingInviteId === interview.id}
+                >
+                  {sendingInviteId === interview.id ? "Sending..." : "Send Invite"}
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
 
+      {success && <div className="success-banner">{success}</div>}
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button onClick={() => setError("")}>x</button>
+        </div>
+      )}
+
       {/* Kanban Pipeline */}
       <div className="pipeline-section">
-        <h2>Hiring Pipeline</h2>
+        <div className="section-heading-row">
+          <h2>Hiring Pipeline</h2>
+          <span className="section-chip">{totalPipelineCandidates} active</span>
+        </div>
         <p className="pipeline-hint">
           Use the dropdown on each card to change status
         </p>
 
-        <div className="kanban-board">
-          {STATUS_COLUMNS.map((column) => (
-            <div key={column.key} className="kanban-column">
-              <div
-                className="column-header"
-                style={{ borderColor: column.color }}
-              >
-                <span className="column-title">{column.label}</span>
-                <span
-                  className="column-count"
-                  style={{ backgroundColor: column.color }}
+        <div className="kanban-scroll">
+          <div className="kanban-board">
+            {STATUS_COLUMNS.map((column) => (
+              <div key={column.key} className="kanban-column">
+                <div
+                  className="column-header"
+                  style={{ borderColor: column.color }}
                 >
-                  {getApplicationsByStatus(column.key).length}
-                </span>
-              </div>
-              <div className="column-content">
-                {getApplicationsByStatus(column.key).map((app) => (
-                  <div
-                    key={app.id}
-                    className={`kanban-card ${selectedAppIds.includes(app.id) ? "selected" : ""}`}
+                  <span className="column-title">{column.label}</span>
+                  <span
+                    className="column-count"
+                    style={{ backgroundColor: column.color }}
                   >
-                    <div className="card-header-row">
-                      <div className="card-title">{app.candidate_name}</div>
-                      <input
-                        type="checkbox"
-                        className="card-checkbox"
-                        checked={selectedAppIds.includes(app.id)}
-                        onChange={() => toggleAppSelection(app.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                    <div className="card-job">{app.job_title}</div>
-                    <div className="card-meta">
-                      {new Date(app.applied_at).toLocaleDateString()}
-                      {app.match_score && (
-                        <span className="match-score">{app.match_score}%</span>
+                    {applicationsByStatus[column.key].length}
+                  </span>
+                </div>
+                <div className="column-content">
+                  {applicationsByStatus[column.key].map((app) => (
+                    <div
+                      key={app.id}
+                      className={`kanban-card ${selectedAppIds.includes(app.id) ? "selected" : ""}`}
+                    >
+                      <div className="card-header-row">
+                        <div className="card-title">{app.candidate_name}</div>
+                        <input
+                          type="checkbox"
+                          className="card-checkbox"
+                          checked={selectedAppIds.includes(app.id)}
+                          onChange={() => toggleAppSelection(app.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      <div className="card-job">{app.job_title}</div>
+                      <div className="card-meta">
+                        {new Date(app.applied_at).toLocaleDateString()}
+                        {app.match_score && (
+                          <span className="match-score">{app.match_score}%</span>
+                        )}
+                      </div>
+                      <select
+                        className="card-status-select"
+                        value={app.status}
+                        onChange={(e) =>
+                          handleCardStatusChange(app, e.target.value)
+                        }
+                        disabled={updatingAppId === app.id}
+                        style={{ borderColor: column.color }}
+                      >
+                        {STATUS_COLUMNS.map((opt) => (
+                          <option key={opt.key} value={opt.key}>
+                            {opt.label}
+                          </option>
+                        ))}
+                        <option value="hired">Hired</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                      {app.resume_id && (
+                        <button
+                          className="card-resume-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDrawerApp(app);
+                          }}
+                        >
+                          <FileText size={16} className="inline-icon"/> View Resume
+                        </button>
                       )}
                     </div>
-                    <select
-                      className="card-status-select"
-                      value={app.status}
-                      onChange={(e) =>
-                        handleCardStatusChange(app, e.target.value)
-                      }
-                      disabled={updatingAppId === app.id}
-                      style={{ borderColor: column.color }}
-                    >
-                      {STATUS_COLUMNS.map((opt) => (
-                        <option key={opt.key} value={opt.key}>
-                          {opt.label}
-                        </option>
-                      ))}
-                      <option value="hired">Hired</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
-                    {app.resume_id && (
-                      <button
-                        className="card-resume-link"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDrawerApp(app);
-                        }}
-                      >
-                        <FileText size={16} className="inline-icon"/> View Resume
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {getApplicationsByStatus(column.key).length === 0 && (
-                  <div className="empty-column">
-                    {column.key === "new"
-                      ? "No new applications yet"
-                      : `No candidates in ${column.label.toLowerCase()}`}
-                  </div>
-                )}
+                  ))}
+                  {applicationsByStatus[column.key].length === 0 && (
+                    <div className="empty-column">
+                      {column.key === "new"
+                        ? "No new applications yet"
+                        : `No candidates in ${column.label.toLowerCase()}`}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -469,6 +597,20 @@ const RecruiterDashboard = () => {
             >
               Cancel
             </button>
+            <button
+              className="bulk-cancel-btn"
+              onClick={() => handleBulkShortlist(true)}
+              disabled={isBulkUpdating}
+            >
+              Shortlist
+            </button>
+            <button
+              className="bulk-cancel-btn"
+              onClick={() => handleBulkShortlist(false)}
+              disabled={isBulkUpdating}
+            >
+              Unshortlist
+            </button>
           </div>
         </div>
       )}
@@ -484,3 +626,4 @@ const RecruiterDashboard = () => {
 };
 
 export default RecruiterDashboard;
+

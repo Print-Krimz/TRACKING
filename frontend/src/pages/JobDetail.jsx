@@ -1,12 +1,5 @@
 /**
- * Job Detail Page Component
- *
- * Full view of a job requisition with:
- * - Job info (title, department, location, salary, description)
- * - Required skills / criteria
- * - AI-extracted keywords
- * - Recruiter actions (change status, extract keywords, delete)
- * - Candidate action (apply)
+ * Job Detail Page Component — MEGS HR Pipeline
  */
 
 import { useState, useEffect } from "react";
@@ -301,19 +294,14 @@ const JobDetail = () => {
                 </span>
                 {isRecruiter && (
                   <button
-                    className="action-btn"
+                    className="job-action-btn edit-btn-header"
                     onClick={() => setShowEditModal(true)}
-                    style={{ marginLeft: "1rem" }}
                   >
                     <svg
                       viewBox="0 0 24 24"
                       fill="none"
                       width="18"
                       height="18"
-                      style={{
-                        marginRight: "0.25rem",
-                        verticalAlign: "text-bottom",
-                      }}
                     >
                       <path
                         d="M12 20H21M16.5 3.5C17.3284 2.67157 18.6716 2.67157 19.5 3.5C20.3284 4.32843 20.3284 5.67157 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z"
@@ -512,7 +500,7 @@ const JobDetail = () => {
               <div className="action-group">
                 <label>AI Tools</label>
                 <button
-                  className="action-btn extract-btn"
+                  className="job-action-btn extract-btn"
                   onClick={handleExtractKeywords}
                   disabled={extractingKeywords}
                 >
@@ -541,14 +529,8 @@ const JobDetail = () => {
                   )}
                 </button>
                 <button
-                  className="action-btn rank-btn"
+                  className="job-action-btn rank-btn"
                   onClick={() => navigate(`/jobs/${job.id}/ranking`)}
-                  style={{
-                    background: "linear-gradient(135deg, #8b5cf6, #a78bfa)",
-                    color: "#fff",
-                    border: "none",
-                    marginTop: "0.5rem",
-                  }}
                 >
                   <svg viewBox="0 0 24 24" fill="none">
                     <path
@@ -566,7 +548,7 @@ const JobDetail = () => {
                 <label>Danger Zone</label>
                 {!showDeleteConfirm ? (
                   <button
-                    className="action-btn delete-btn"
+                    className="job-action-btn delete-btn"
                     onClick={() => setShowDeleteConfirm(true)}
                   >
                     <svg viewBox="0 0 24 24" fill="none">
